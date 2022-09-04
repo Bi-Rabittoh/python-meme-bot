@@ -3,11 +3,11 @@ import textwrap
 
 class Meme:
 
-    basewidth = 1200             #Width to make the meme
+    basewidth = 1200            #Width to make the meme
     fontBase = 100
     letSpacing = 9              #Space between letters
     fill = (255, 255, 255)      #TextColor
-    stroke_fill = (0,0,0)             #outlineColor
+    stroke_fill = (0,0,0)       #outlineColor
     lineSpacing = 10            #Space between lines
     stroke_width=9              #How thick the outline of the text is
     fontfile = './impact.ttf'
@@ -16,7 +16,7 @@ class Meme:
         self.img = self.createImage(image)
         self.d = ImageDraw.Draw(self.img)
 
-        self.splitCaption = textwrap.wrap(caption, width=20)  # The text can be wider than the img. If thats the case split the text into multiple lines
+        self.splitCaption = textwrap.wrap(caption.upper(), width=20)  # The text can be wider than the img. If thats the case split the text into multiple lines
         self.splitCaption.reverse()                           # Draw the lines of text from the bottom up
 
         fontSize = self.fontBase+10 if len(self.splitCaption) <= 1 else self.fontBase   #If there is only one line, make the text a bit larger
@@ -77,9 +77,11 @@ class Meme:
 
 
 
-caption = "Now I Have a Caption"
-image = './my_image.jpg'
-outputImage = './my_captioned_image.jpg'
+caption = '''Quando io e poi lei e poi io e poi lei e poi
+
+Bottom text'''
+image = './image.jpg'
+outputImage = './output_image.jpg'
 
 meme = Meme(caption, image)
 img = meme.draw()
