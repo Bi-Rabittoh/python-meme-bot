@@ -1,7 +1,7 @@
 localization = {
     'us': {
         'welcome' : "Welcome to PILuAnimeBot!",
-        'sauce' : "[Sauce 🍝]({})",
+        'sauce' : "Sauce 🍝",
         'no_caption' : "No caption detected.",
         'lewd_toggle' : "Lewd content was {} for this chat.",
         'enabled' : "enabled",

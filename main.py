@@ -12,7 +12,7 @@ from io import BytesIO
 
 from telegram.error import TelegramError, BadRequest
 from telegram.ext import Updater, CallbackContext, CommandHandler, MessageHandler, Filters
-from telegram import Update
+from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 
 lang = 'us'
 
@@ -35,11 +35,11 @@ def _ttbt_general(context, text, image=None):
     if text.strip() == "":
         return None, l("no_caption", lang)
     
-    url = ""
+    markup = ""
     if image is None:
-        image, url = _get_image(context, bio=False)
+        image, markup = _get_image(context, bio=False)
     image = tt_bt_effect(text, image)
-    return _img_to_bio(image), url
+    return _img_to_bio(image), markup
 
 def _get_reply(input, context, fallback=""):
 
@@ -57,7 +57,7 @@ def _get_reply(input, context, fallback=""):
     if input.text is not None:
         return image, input.text
     
-    return fallback
+    return image, fallback
 
 def _get_lewd(context):
     try:
@@ -76,10 +76,11 @@ def _get_image(context, bio=True):
         logging.warning("Getting Image failed")
         raise TelegramError("bad image")
     
-    url = l("sauce", lang).format(url)
+    markup = InlineKeyboardMarkup([[InlineKeyboardButton(text=l("sauce", lang), url=url)]])
+    
     if bio:
-        return _img_to_bio(image), url
-    return image, url
+        return _img_to_bio(image), markup
+    return image, markup
     
 
 def start(update: Update, context: CallbackContext):
@@ -97,8 +98,8 @@ def set_lewd(update: Update, context: CallbackContext):
     context.bot.send_message(chat_id=update.effective_chat.id, text=message)
 
 def pic(update: Update, context: CallbackContext):
-    image, url = _get_image(context)
-    update.message.reply_photo(photo=image, caption=url, parse_mode="markdown")
+    image, markup = _get_image(context)
+    update.message.reply_photo(photo=image, parse_mode="markdown", reply_markup=markup)
 
 def pilu(update: Update, context: CallbackContext):
     logging.warning(f"User {update.message.from_user.username} requested an explicit pic.")
@@ -111,33 +112,35 @@ def pilu(update: Update, context: CallbackContext):
         logging.warning("Getting Image failed")
         raise TelegramError("bad image")
         return
-    url = l("sauce", lang).format(url)
+    
     image = _img_to_bio(image)
-    update.message.reply_photo(photo=image, caption=url, parse_mode="markdown")
+    markup = InlineKeyboardMarkup([[InlineKeyboardButton(text=l("sauce", lang), url=url)]])
+    
+    update.message.reply_photo(photo=image, caption=url, parse_mode="markdown", reply_markup=markup)
 
 def tt(update: Update, context: CallbackContext):
     image, reply = _get_reply(update.message.reply_to_message, context)
     content = _get_args(context)
     input_text = f"{reply} {content}".replace("\n", " ")
     
-    image, url = _ttbt_general(context, input_text, image)
+    image, markup = _ttbt_general(context, input_text, image)
     
     if image is None:
-        update.message.reply_text(url)
+        update.message.reply_text(markup)
         return
-    update.message.reply_photo(photo=image, caption=url, parse_mode="markdown")
+    update.message.reply_photo(photo=image, parse_mode="markdown", reply_markup=markup)
 
 def bt(update: Update, context: CallbackContext):
     image, reply = _get_reply(update.message.reply_to_message, context)
     content = _get_args(context)
     input_text = f"{reply} {content}".replace("\n", " ")
     
-    image, url =_ttbt_general(context, " \n" + input_text, image)
+    image, markup =_ttbt_general(context, " \n" + input_text, image)
     
     if image is None:
-        update.message.reply_text(url)
+        update.message.reply_text(markup)
         return
-    update.message.reply_photo(photo=image, caption=url, parse_mode="markdown")
+    update.message.reply_photo(photo=image, parse_mode="markdown", reply_markup=markup)
 
 def ttbt(update: Update, context: CallbackContext):
     message = update.message
@@ -146,20 +149,19 @@ def ttbt(update: Update, context: CallbackContext):
     content = message.text[6:] # /ttbt[space]
     input_text = f"{reply}\n{content}"
     
-    image, url =_ttbt_general(context, input_text, image)
+    image, markup =_ttbt_general(context, input_text, image)
     
     if image is None:
-        message.reply_text(url)
+        message.reply_text(markup)
         return
-    message.reply_photo(photo=image, caption=url, parse_mode="markdown")
+    message.reply_photo(photo=image, parse_mode="markdown", reply_markup=markup)
     
 def caps(update: Update, context: CallbackContext):
     _, reply = _get_reply(update.message.reply_to_message, context, _get_args(context))
     context.bot.send_message(chat_id=update.effective_chat.id, text=reply.upper())
     
 def unknown(update: Update, context: CallbackContext):
-    logging.info(f"User {update.message.from_user.username} sent {_get_args(context)}")
-    context.bot.reply_text(text=l("unknown", lang))
+    logging.info(f"User {update.message.from_user.username} sent {update.message.text_markdown_v2} and I don't know what that means.")
     
 def error_callback(update: Update, context: CallbackContext):
     try:
