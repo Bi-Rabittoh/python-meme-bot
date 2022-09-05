@@ -43,7 +43,7 @@ def _draw_tt_bt(text, img, bottom=False):
         
         y = y + (txt_height + LINE_SPACING) * factor
 
-def tt_bt(text, img):
+def tt_bt_effect(text, img):
     lines = [x for x in text.split("\n") if x]
     
     tt = lines[0] if len(lines) > 0 else None
@@ -71,7 +71,7 @@ def image_test():
     image = Image.open("image.jpg")
     #image, url = get_random_image()
     
-    res = tt_bt("top text\nbottom text", image)
+    res = tt_bt_effect("top text\nbottom text", image)
     res.save('./output.jpg', optimize=True, quality=80)
     
     print("Image test successful")
