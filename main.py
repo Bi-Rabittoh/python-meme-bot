@@ -31,18 +31,33 @@ def _img_to_bio(image):
     bio.seek(0)
     return bio
 
-def _ttbt_general(context, text):
+def _ttbt_general(context, text, image=None):
     if text.strip() == "":
         return None, l("no_caption", lang)
     
-    image, url = _get_image(context, bio=False)
+    url = ""
+    if image is None:
+        image, url = _get_image(context, bio=False)
     image = tt_bt_effect(text, image)
     return _img_to_bio(image), url
 
-def _get_reply(input, fallback=""):
+def _get_reply(input, context, fallback=""):
+
     if input is None:
-        return fallback
-    return input.text
+        return None, fallback
+    
+    if input.photo is not None:
+        image = input.photo[-1].get_file()
+        #image = context.bot.get_file(input.photo[-1].file_id)
+        image = Image.open(BytesIO(image.download_as_bytearray()))
+    
+    if input.caption is not None:
+        return image, input.caption
+    
+    if input.text is not None:
+        return image, input.text
+    
+    return fallback
 
 def _get_lewd(context):
     try:
@@ -101,11 +116,11 @@ def pilu(update: Update, context: CallbackContext):
     update.message.reply_photo(photo=image, caption=url, parse_mode="markdown")
 
 def tt(update: Update, context: CallbackContext):
-    reply = _get_reply(update.message.reply_to_message)
+    image, reply = _get_reply(update.message.reply_to_message, context)
     content = _get_args(context)
     input_text = f"{reply} {content}".replace("\n", " ")
     
-    image, url = _ttbt_general(context, input_text)
+    image, url = _ttbt_general(context, input_text, image)
     
     if image is None:
         update.message.reply_text(url)
@@ -113,11 +128,11 @@ def tt(update: Update, context: CallbackContext):
     update.message.reply_photo(photo=image, caption=url, parse_mode="markdown")
 
 def bt(update: Update, context: CallbackContext):
-    reply = _get_reply(update.message.reply_to_message)
+    image, reply = _get_reply(update.message.reply_to_message, context)
     content = _get_args(context)
     input_text = f"{reply} {content}".replace("\n", " ")
     
-    image, url =_ttbt_general(context, " \n" + input_text)
+    image, url =_ttbt_general(context, " \n" + input_text, image)
     
     if image is None:
         update.message.reply_text(url)
@@ -125,19 +140,21 @@ def bt(update: Update, context: CallbackContext):
     update.message.reply_photo(photo=image, caption=url, parse_mode="markdown")
 
 def ttbt(update: Update, context: CallbackContext):
-    reply = _get_reply(update.message.reply_to_message)
-    content = _get_args(context)
+    message = update.message
+    
+    image, reply = _get_reply(message.reply_to_message, context)
+    content = message.text[6:] # /ttbt[space]
     input_text = f"{reply}\n{content}"
     
-    image, url =_ttbt_general(context, input_text)
+    image, url =_ttbt_general(context, input_text, image)
     
     if image is None:
-        update.message.reply_text(url)
+        message.reply_text(url)
         return
-    update.message.reply_photo(photo=image, caption=url, parse_mode="markdown")
+    message.reply_photo(photo=image, caption=url, parse_mode="markdown")
     
 def caps(update: Update, context: CallbackContext):
-    reply = _get_reply(update.message.reply_to_message, _get_args(context))
+    _, reply = _get_reply(update.message.reply_to_message, context, _get_args(context))
     context.bot.send_message(chat_id=update.effective_chat.id, text=reply.upper())
     
 def unknown(update: Update, context: CallbackContext):

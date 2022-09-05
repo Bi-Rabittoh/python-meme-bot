@@ -30,16 +30,15 @@ def get_random_image(rating=rating_normal):
         #"tags": "order:change_desc rating:" + rating,
         "tags": "rating:" + rating,
     }
-    #url = "https://danbooru.donmai.us/post/index.json"
     count = 0
     while count < max_tries:
-        params['page'] = random.randint(1,max_pages)
+        params['page'] = random.randint(1, max_pages)
         r = requests.get(base_url + page_suffix, params)
         page = r.json()
         #print("Page: " + str(params['page']))
     
         if 'success' in page:
-            if page['success'] == False:
+            if not page['success']:
                 print("Error: " + page['error'])
                 print("Message: " + page['message'])
             else:
