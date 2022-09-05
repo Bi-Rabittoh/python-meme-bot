@@ -1,7 +1,7 @@
 
 from PIL import Image, UnidentifiedImageError
 from io import BytesIO
-import requests, random, time
+import requests, random, time, logging
 
 base_url = "https://danbooru.donmai.us/"
 base_url_test = "https://testbooru.donmai.us/"
@@ -20,9 +20,21 @@ rating_normal = "g,s"
 rating_lewd = "q"
 
 limit = 100
-max_pages = 700
+max_pages = 1000
 sleep_seconds = 3
 max_tries = 5
+
+supported_file_types = [
+    ".jpg",
+    ".jpeg",
+    ".png"
+]
+
+def _valid_extension(fname: str):
+    for t in supported_file_types:
+        if fname.lower().endswith(t):
+            return True
+    return False
 
 def get_random_image(rating=rating_normal):
     params = {
@@ -33,35 +45,27 @@ def get_random_image(rating=rating_normal):
     count = 0
     while count < max_tries:
         params['page'] = random.randint(1, max_pages)
-        r = requests.get(base_url + page_suffix, params)
-        page = r.json()
+        page = requests.get(base_url + page_suffix, params).json()
+        n = random.randint(0, limit - 1)
+        
         #print("Page: " + str(params['page']))
-    
-        if 'success' in page:
-            if not page['success']:
-                print("Error: " + page['error'])
-                print("Message: " + page['message'])
-            else:
-                print(page)
-        else:
-            n = random.randint(0, limit - 1)
-            #print("File: " + str(n))
-            try:
-                file_url = page[n]['file_url']
-                r = requests.get(file_url)
-                try:
-                    img = Image.open(BytesIO(r.content))
-                    return img, base_url + post_suffix + str(page[n]['id'])
-                except UnidentifiedImageError:
-                    print("Unidentified image: " + file_url)
-            except KeyError:
-                print("Image has no file_url. post: " + base_url + post_suffix + str(page[n]['id']))
-                print(str(page[n]))
-            except IndexError:
-                print("Page does not exist. " + str(page))
+        #print("File: " + str(n))
+        try:
+            file_url = page[n]['file_url']
+            if not _valid_extension(file_url):
+                raise Exception
+            r = requests.get(file_url)
+            img = Image.open(BytesIO(r.content))
+            link = base_url + post_suffix + str(page[n]['id'])
+            return img, link
+            
+        except (KeyError, IndexError, Exception):
+            logging.warning("Can't display image.")
+        except UnidentifiedImageError:
+            logging.warning("Unidentified image: " + file_url)
         
         count += 1
-        print(f"Try #{count} failed. Retrying in {sleep_seconds} seconds...\n")
+        logging.warning(f"Try #{count} failed.\n")
         #time.sleep(sleep_seconds)
-    print(f"Reached {count} tries. Giving up.")
+    logging.error(f"Reached {count} tries. Giving up.")
     return None, None

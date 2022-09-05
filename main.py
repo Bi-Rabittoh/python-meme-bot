@@ -46,7 +46,8 @@ def _get_reply(input, context, fallback=""):
     if input is None:
         return None, fallback
     
-    if input.photo is not None:
+    image = None
+    if len(input.photo) > 0:
         image = input.photo[-1].get_file()
         #image = context.bot.get_file(input.photo[-1].file_id)
         image = Image.open(BytesIO(image.download_as_bytearray()))
@@ -146,8 +147,12 @@ def ttbt(update: Update, context: CallbackContext):
     message = update.message
     
     image, reply = _get_reply(message.reply_to_message, context)
-    content = message.text[6:] # /ttbt[space]
+    content = message.text.split(" ")
+    content.pop(0)
+    content = " ".join(content)
+    
     input_text = f"{reply}\n{content}"
+    print(message.text.split(" "))
     
     image, markup =_ttbt_general(context, input_text, image)
     

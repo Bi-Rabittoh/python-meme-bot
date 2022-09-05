@@ -7,7 +7,7 @@ localization = {
         'enabled' : "enabled",
         'disabled' : "disabled",
         'unknown' : "Sorry, I didn't understand that command.",
-        'error': "Something bad happened. Please retry.",
+        'error': "An error has occurred. Please retry.",
     }
 }
 
