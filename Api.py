@@ -16,13 +16,10 @@ ratings = [
     'e', # explicit
 ]
 
-rating_normal = "g,s"
-rating_lewd = "q"
+rating_normal = "rating:g,s"
+rating_lewd = "rating:q"
 
-limit = 100
-max_pages = 1000
-sleep_seconds = 3
-max_tries = 5
+
 
 supported_file_types = [
     ".jpg",
@@ -36,17 +33,26 @@ def _valid_extension(fname: str):
             return True
     return False
 
-def get_random_image(rating=rating_normal):
+def get_random_image(rating=rating_normal, tags=""):
+    limit = 100
+    max_pages = 1000
+    sleep_seconds = 3
+    max_tries = 5
+
     params = {
         "limit": limit,
         #"tags": "order:change_desc rating:" + rating,
-        "tags": "rating:" + rating,
+        "tags": rating + tags,
     }
+    
+    if tags != "":
+        max_pages = 50
+        
     count = 0
     while count < max_tries:
         params['page'] = random.randint(1, max_pages)
         page = requests.get(base_url + page_suffix, params).json()
-        n = random.randint(0, limit - 1)
+        n = random.randint(0, params['limit'] - 1)
         
         #print("Page: " + str(params['page']))
         #print("File: " + str(n))

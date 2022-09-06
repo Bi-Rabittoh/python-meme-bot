@@ -66,12 +66,12 @@ def _get_lewd(context):
     except KeyError:
         return False
 
-def _get_image(context, bio=True):
+def _get_image(context, tag="", bio=True):
     if context is not None:
         if _get_lewd(context):
-            image, url = get_random_image(rating_lewd)
+            image, url = get_random_image(rating_lewd, tag)
         else:
-            image, url = get_random_image(rating_normal)
+            image, url = get_random_image(rating_normal, tag)
     
     if image is None:
         logging.warning("Getting Image failed")
@@ -99,7 +99,31 @@ def set_lewd(update: Update, context: CallbackContext):
     context.bot.send_message(chat_id=update.effective_chat.id, text=message)
 
 def pic(update: Update, context: CallbackContext):
-    image, markup = _get_image(context)
+    try:
+        tag = " " + context.args[0]
+    except IndexError:
+        tag = ""
+
+    image, markup = _get_image(context, tag)
+    update.message.reply_photo(photo=image, parse_mode="markdown", reply_markup=markup)
+
+def raw(update: Update, context: CallbackContext):
+    tag = ""
+    try:
+        tag += " " + context.args[0]
+        tag += " " + context.args[1]
+    except IndexError:
+        pass
+    
+    image, url = get_random_image("", tag)
+    
+    if image is None:
+        logging.warning("Getting Image failed")
+        raise TelegramError("bad image")
+    
+    image = _img_to_bio(image)
+    markup = InlineKeyboardMarkup([[InlineKeyboardButton(text=l("sauce", lang), url=url)]])
+    
     update.message.reply_photo(photo=image, parse_mode="markdown", reply_markup=markup)
 
 def pilu(update: Update, context: CallbackContext):
@@ -108,7 +132,7 @@ def pilu(update: Update, context: CallbackContext):
         tag = " " + context.args[0]
     except IndexError:
         tag = ""
-    image, url = get_random_image("e" + tag)
+    image, url = get_random_image("rating:e" + tag)
     if image is None:
         logging.warning("Getting Image failed")
         raise TelegramError("bad image")
@@ -152,7 +176,6 @@ def ttbt(update: Update, context: CallbackContext):
     content = " ".join(content)
     
     input_text = f"{reply}\n{content}"
-    print(message.text.split(" "))
     
     image, markup =_ttbt_general(context, input_text, image)
     
@@ -186,6 +209,7 @@ def main():
     dispatcher.add_handler(CommandHandler('lewd', set_lewd))
     dispatcher.add_handler(CommandHandler('caps', caps))
     dispatcher.add_handler(CommandHandler('pic', pic))
+    dispatcher.add_handler(CommandHandler('raw', raw))
     dispatcher.add_handler(CommandHandler('pilu', pilu))
     dispatcher.add_handler(CommandHandler('ttbt', ttbt))
     dispatcher.add_handler(CommandHandler('tt', tt))
