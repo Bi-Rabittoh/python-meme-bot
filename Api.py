@@ -6,9 +6,6 @@ import requests, random, time, logging
 base_url = "https://danbooru.donmai.us/"
 base_url_test = "https://testbooru.donmai.us/"
 
-page_suffix = "post/index.json"
-post_suffix = "posts/"
-
 ratings = [
     'g', # general
     's', # sensitive
@@ -16,10 +13,8 @@ ratings = [
     'e', # explicit
 ]
 
-rating_normal = "rating:g,s"
-rating_lewd = "rating:q"
-
-
+rating_normal = "rating:g"
+rating_lewd = "rating:s,q"
 
 supported_file_types = [
     ".jpg",
@@ -28,12 +23,15 @@ supported_file_types = [
 ]
 
 def _valid_extension(fname: str):
-    for t in supported_file_types:
+    for t in [".jpg", ".jpeg", ".png"]:
         if fname.lower().endswith(t):
             return True
     return False
 
 def get_random_image(rating=rating_normal, tags=""):
+    page_suffix = "post/index.json"
+    post_suffix = "posts/"
+    
     limit = 100
     max_pages = 1000
     sleep_seconds = 3

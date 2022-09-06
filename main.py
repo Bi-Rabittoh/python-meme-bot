@@ -1,6 +1,6 @@
 from PIL import Image
 from Api import get_random_image, rating_normal, rating_lewd
-from Effects import tt_bt_effect
+from Effects import tt_bt_effect, splash_effect
 import Constants as C
 from Constants import get_localized_string as l
 
@@ -49,7 +49,6 @@ def _get_reply(input, context, fallback=""):
     image = None
     if len(input.photo) > 0:
         image = input.photo[-1].get_file()
-        #image = context.bot.get_file(input.photo[-1].file_id)
         image = Image.open(BytesIO(image.download_as_bytearray()))
     
     if input.caption is not None:
@@ -143,11 +142,60 @@ def pilu(update: Update, context: CallbackContext):
     
     update.message.reply_photo(photo=image, caption=url, parse_mode="markdown", reply_markup=markup)
 
+def _get_content(message):
+    image = None
+    if len(message.photo) > 0:
+        image = message.photo[-1].get_file()
+        image = Image.open(BytesIO(image.download_as_bytearray()))
+    
+    if message.text is not None:
+        content = message.text.strip()
+    elif message.caption is not None:
+        content = message.caption.strip()
+
+    logging.info(f"User {message.from_user.username} typed: {str(content)}")
+    
+    lines = content.split("\n")
+    r = lines[0].split(" ")
+    r.pop(0)
+    lines[0] = " ".join(r)
+    content = "\n".join(lines)
+    '''
+    lines_new = []
+    for line in lines:
+        words = line.split(" ")
+        lines_new.append(" ".join(words))
+    content = "\n".join(lines_new)
+    '''
+    
+    return image, content
+
+def _format_author(user):
+    if user.username is not None:
+        return user.full_name + f" ({user.username})"
+    return user.full_name
+
+def _get_author(message):
+    
+    if message.reply_to_message is None:
+        return _format_author(message.from_user)
+    
+    if message.reply_to_message.forward_from is not None:
+        return _format_author(message.reply_to_message.forward_from)
+    
+    return _format_author(message.reply_to_message.from_user)
+
 def tt(update: Update, context: CallbackContext):
-    image, reply = _get_reply(update.message.reply_to_message, context)
-    content = _get_args(context)
+    image_reply, reply = _get_reply(update.message.reply_to_message, context)
+    image_content, content = _get_content(update.message)
     input_text = f"{reply} {content}".replace("\n", " ")
     
+    image = None
+    if image_reply is not None:
+        image = image_reply
+        
+    if image_content is not None:
+        image = image_content
     image, markup = _ttbt_general(context, input_text, image)
     
     if image is None:
@@ -156,10 +204,16 @@ def tt(update: Update, context: CallbackContext):
     update.message.reply_photo(photo=image, parse_mode="markdown", reply_markup=markup)
 
 def bt(update: Update, context: CallbackContext):
-    image, reply = _get_reply(update.message.reply_to_message, context)
-    content = _get_args(context)
+    image_reply, reply = _get_reply(update.message.reply_to_message, context)
+    image_content, content = _get_content(update.message)
     input_text = f"{reply} {content}".replace("\n", " ")
     
+    image = None
+    if image_reply is not None:
+        image = image_reply
+        
+    if image_content is not None:
+        image = image_content
     image, markup =_ttbt_general(context, " \n" + input_text, image)
     
     if image is None:
@@ -168,22 +222,56 @@ def bt(update: Update, context: CallbackContext):
     update.message.reply_photo(photo=image, parse_mode="markdown", reply_markup=markup)
 
 def ttbt(update: Update, context: CallbackContext):
-    message = update.message
-    
-    image, reply = _get_reply(message.reply_to_message, context)
-    content = message.text.split(" ")
-    content.pop(0)
-    content = " ".join(content)
+    image_reply, reply = _get_reply(update.message.reply_to_message, context)
+    image_content, content = _get_content(update.message)
     
     input_text = f"{reply}\n{content}"
     
+    image = None
+    if image_reply is not None:
+        image = image_reply
+        
+    if image_content is not None:
+        image = image_content
+
     image, markup =_ttbt_general(context, input_text, image)
     
     if image is None:
-        message.reply_text(markup)
+        update.message.reply_text(markup)
         return
-    message.reply_photo(photo=image, parse_mode="markdown", reply_markup=markup)
+    update.message.reply_photo(photo=image, parse_mode="markdown", reply_markup=markup)
+
+def splash(update: Update, context: CallbackContext):
+    author = _get_author(update.message)
+    image_reply, reply = _get_reply(update.message.reply_to_message, context)
+    image_content, content = _get_content(update.message)
     
+    input_text = f"{author}\n{reply}\n{content}"
+    
+    markup = ""
+    
+    if len(input_text.strip().split("\n")) < 2:
+        markup = l("no_caption", lang)
+        update.message.reply_text(markup)
+        return
+    
+    image = None
+    if image_reply is not None:
+        image = image_reply
+        
+    if image_content is not None:
+        image = image_content
+    
+    if image is None:
+        image, markup = _get_image(context, bio=False)
+    image = _img_to_bio(splash_effect(input_text, image))
+    
+    if image is None:
+        update.message.reply_text(markup)
+        return
+    
+    update.message.reply_photo(photo=image, parse_mode="markdown", reply_markup=markup)
+
 def caps(update: Update, context: CallbackContext):
     _, reply = _get_reply(update.message.reply_to_message, context, _get_args(context))
     context.bot.send_message(chat_id=update.effective_chat.id, text=reply.upper())
@@ -199,6 +287,11 @@ def error_callback(update: Update, context: CallbackContext):
     except TelegramError:
         logging.error("TelegramError!!")
         context.bot.send_message(chat_id=update.effective_chat.id, text=l('error', lang))
+        
+def _add_effect_handler(dispatcher, command: str, callback):
+    dispatcher.add_handler(CommandHandler(command, callback))
+    
+    dispatcher.add_handler(MessageHandler(Filters.caption(update=[f"/{command}"]), callback))
 def main():
     
     updater = Updater(token=os.getenv("token"))
@@ -211,9 +304,11 @@ def main():
     dispatcher.add_handler(CommandHandler('pic', pic))
     dispatcher.add_handler(CommandHandler('raw', raw))
     dispatcher.add_handler(CommandHandler('pilu', pilu))
-    dispatcher.add_handler(CommandHandler('ttbt', ttbt))
-    dispatcher.add_handler(CommandHandler('tt', tt))
-    dispatcher.add_handler(CommandHandler('bt', bt))
+    
+    _add_effect_handler(dispatcher, 'ttbt', ttbt)
+    _add_effect_handler(dispatcher, 'tt', tt)
+    _add_effect_handler(dispatcher, 'bt', bt)
+    _add_effect_handler(dispatcher, 'splash', splash)
     
     dispatcher.add_handler(MessageHandler(Filters.command, unknown))
     updater.start_polling()
