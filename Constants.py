@@ -8,7 +8,17 @@ localization = {
         'disabled' : "disabled",
         'unknown' : "Sorry, I didn't understand that command.",
         'error': "An error has occurred. Please retry.",
-    }
+    },
+    'it': {
+        'welcome' : "Benvenuto da PILuAnimeBot!",
+        'sauce' : "Salsa 🍝",
+        'no_caption' : "Scrivi un testo per favore.",
+        'lewd_toggle' : "La roba lewd è stata {} per questa chat.",
+        'enabled' : "abilitata",
+        'disabled' : "disabilitata",
+        'unknown' : "Non ho capito.",
+        'error': "Qualcosa è andato storto, riprova.",
+    },
 }
 
 

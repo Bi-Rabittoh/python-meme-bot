@@ -13,7 +13,7 @@ ratings = [
     'e', # explicit
 ]
 
-rating_normal = "rating:g"
+rating_normal = "rating:g,s"
 rating_lewd = "rating:s,q"
 
 supported_file_types = [
@@ -39,7 +39,6 @@ def get_random_image(rating=rating_normal, tags=""):
 
     params = {
         "limit": limit,
-        #"tags": "order:change_desc rating:" + rating,
         "tags": rating + tags,
     }
     
