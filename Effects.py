@@ -84,42 +84,6 @@ def splash_effect(text: str, img: Image):
     MARGIN = 10
     LINE_WIDTH = 20
     
-    def _draw_splash(text, img):
-        font_first = ImageFont.truetype(font=ARIAL_FONT_FILE, size=FONT_FIRST)
-        font_base = ImageFont.truetype(font=ARIAL_FONT_FILE, size=FONT_BASE)
-        
-        img_width, img_height = img.size
-
-        d = ImageDraw.Draw(img)
-        
-        _, _, first_txt_width, first_txt_height = d.textbbox((0, 0), text[0], font=font_first)
-        _, _, max_txt_width, txt_height = d.textbbox((0, 0), text[1], font=font_base)
-
-        total_height = (txt_height + LINE_SPACING) * (len(text) - 1) + LINE_SPACING + first_txt_height
-        y = (img_height - total_height) / 2
-        
-        for i in range(1, len(text)):
-            #temp = d.textbbox((0, 0), text[i], font=font_base)[2]
-            temp = int(font_base.getlength(text[i]))
-            if temp > max_txt_width:
-                max_txt_width = temp
-
-        max_txt_width = max_txt_width if max_txt_width > first_txt_width else first_txt_width
-        x_start = (img_width - max_txt_width) / 2
-        
-        for i in range(len(text)):
-            line = text[i]
-            x = x_start
-            '''
-            if align == "center":
-                txt_width = d.textbbox((0, 0), line, font=font)[2]
-                x = (img_width - txt_width - (len(line) * LETTER_SPACING))/2
-            '''
-            font = font_base if i > 0 else font_first
-            _draw_line(d, x, y, line, font, LETTER_SPACING, FILL, STROKE_WIDTH, STROKE_FILL)
-
-            y += (txt_height if i > 0 else first_txt_height) + LINE_SPACING
-    
     lines = [x for x in text.split("\n") if x]
     if len(lines) < 2:
         return img
@@ -128,11 +92,40 @@ def splash_effect(text: str, img: Image):
     
     img = _darken_image(img)
     
-    split_text = textwrap.wrap(lines[1].upper(), width=LINE_WIDTH)
-    if split_text == []:
+    text = textwrap.wrap(lines[1].upper(), width=LINE_WIDTH)
+    if text == []:
         return
-    split_text.insert(0, lines[0])
-    _draw_splash(split_text, img)
+    text.insert(0, lines[0])
+    font_first = ImageFont.truetype(font=ARIAL_FONT_FILE, size=FONT_FIRST)
+    font_base = ImageFont.truetype(font=ARIAL_FONT_FILE, size=FONT_BASE)
+        
+    img_width, img_height = img.size
+    d = ImageDraw.Draw(img)
+        
+    _, _, first_txt_width, first_txt_height = d.textbbox((0, 0), text[0], font=font_first)
+    _, _, max_txt_width, txt_height = d.textbbox((0, 0), text[1], font=font_base)
+
+    total_height = (txt_height + LINE_SPACING) * (len(text) - 1) + LINE_SPACING + first_txt_height
+    y = (img_height - total_height) / 2
+        
+    for i in range(1, len(text)):
+        temp = int(font_base.getlength(text[i]))
+        if temp > max_txt_width:
+            max_txt_width = temp
+
+    max_txt_width = max_txt_width if max_txt_width > first_txt_width else first_txt_width
+    x_start = (img_width - max_txt_width) / 2
+        
+    for i in range(len(text)):
+        '''
+        if align == "center":
+            txt_width = d.textbbox((0, 0), line, font=font)[2]
+            x = (img_width - txt_width - (len(line) * LETTER_SPACING))/2
+        '''
+        font = font_base if i > 0 else font_first
+        _draw_line(d=d, x=x_start, y=y, line=text[i], font=font, letter_spacing=LETTER_SPACING, fill=FILL, stroke_width=STROKE_WIDTH, stroke_fill=STROKE_FILL)
+
+        y += (txt_height if i > 0 else first_txt_height) + LINE_SPACING
         
     img = img.resize((int(BASE_WIDTH/2), int(float(img.size[1]) * (BASE_WIDTH/2) / img.size[0])))
     

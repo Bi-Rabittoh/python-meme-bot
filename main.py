@@ -40,9 +40,6 @@ def _ttbt_general(context, text, image=None):
     image = _img_to_bio(tt_bt_effect(text, image))
     return image, markup
 
-def _parse_message(text: str):
-    pass
-
 def _get_message_content(message):
     image = None
     if len(message.photo) > 0:
