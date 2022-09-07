@@ -47,7 +47,7 @@ def tt_bt_effect(text: str, img: Image):
         for line in split_caption:
             txt_width = d.textbbox((0, 0), line, font=font)[2]
 
-            x = (img_width - txt_width - (len(line) * LETTER_SPACING))/2
+            x = (img_width - txt_width - (len(line) * LETTER_SPACING)) / 2
 
             _draw_line(d, x, y, line, font, LETTER_SPACING, FILL, STROKE_WIDTH, STROKE_FILL)
 
@@ -68,7 +68,7 @@ def tt_bt_effect(text: str, img: Image):
     if (bt is not None):
         _draw_tt_bt(bt, img, bottom=True)
         
-    img = img.resize((int(BASE_WIDTH/2), int(float(img.size[1]) * (BASE_WIDTH/2) / img.size[0])))
+    img = img.resize((int(BASE_WIDTH / 2), int(float(img.size[1]) * (BASE_WIDTH / 2) / img.size[0])))
     
     if img.mode in ("RGBA", "P"):
         img = img.convert("RGB")
@@ -130,14 +130,14 @@ def splash_effect(text: str, img: Image):
         '''
         if align == "center":
             txt_width = d.textbbox((0, 0), line, font=font)[2]
-            x = (img_width - txt_width - (len(line) * LETTER_SPACING))/2
+            x = (img_width - txt_width - (len(line) * LETTER_SPACING)) / 2
         '''
         font = font_base if i > 0 else font_first
         _draw_line(d=d, x=x_start, y=y, line=text[i], font=font, letter_spacing=LETTER_SPACING, fill=FILL, stroke_width=STROKE_WIDTH, stroke_fill=STROKE_FILL)
 
         y += (txt_height if i > 0 else first_txt_height) + LINE_SPACING
         
-    img = img.resize((int(BASE_WIDTH/2), int(float(img.size[1]) * (BASE_WIDTH/2) / img.size[0])))
+    img = img.resize((int(BASE_WIDTH / 2), int(float(img.size[1]) * (BASE_WIDTH / 2) / img.size[0])))
     
     if img.mode in ("RGBA", "P"):
         img = img.convert("RGB")
@@ -168,10 +168,13 @@ def wot_effect(input_text: str, img: Image):
     k3 = 0.341428
     k4 = 0.364576
     
-    FONT_BASE = (math.sqrt(4 * k1 * k2 * h * n * w + math.pow(k2,2) * math.pow(n,2) * math.pow(LETTER_SPACING,2) + ((2 * k1 * k2 * k3 - 2 * k4 * math.pow(k2,2)) * math.pow(n,2) - 2 * k1 * k2 * LINE_SPACING) * LETTER_SPACING + math.pow(k1,2) * math.pow(n,2) * math.pow(LINE_SPACING,2) + (2 * k1 * k4 * k2 - 2 * math.pow(k1,2) * k3) * math.pow(n,2) * LINE_SPACING + (math.pow(k1,2) * math.pow(k3,2) - 2 * k1 * k4 * k2 * k3 + math.pow(k4,2) * math.pow(k2,2)) * math.pow(n,2)) - k2 * n * LETTER_SPACING - k1 * n * LINE_SPACING + (k1 * k3 + k4 * k2) * n) / (2 * k1 * k2 * n)
+    FONT_BASE = (math.sqrt(4 * k1 * k2 * h * n * w + math.pow(k2, 2) * math.pow(n, 2) * math.pow(LETTER_SPACING, 2) + ((2 * k1 * k2 * k3 - 2 * k4 * math.pow(k2, 2)) * math.pow(n, 2) - 2 * k1 * k2 * LINE_SPACING) * LETTER_SPACING + math.pow(k1, 2) * math.pow(n, 2) * math.pow(LINE_SPACING, 2) + (2 * k1 * k4 * k2 - 2 * math.pow(k1, 2) * k3) * math.pow(n, 2) * LINE_SPACING + (math.pow(k1, 2) * math.pow(k3, 2) - 2 * k1 * k4 * k2 * k3 + math.pow(k4, 2) * math.pow(k2, 2)) * math.pow(n, 2)) - k2 * n * LETTER_SPACING - k1 * n * LINE_SPACING + (k1 * k3 + k4 * k2) * n) / (2 * k1 * k2 * n)
     LINE_WIDTH = w / (k1 * FONT_BASE - k4 + LETTER_SPACING)
     
-    text = textwrap.wrap(input_text, width=LINE_WIDTH)
+    if len(input_text) > LINE_WIDTH:
+        text = textwrap.wrap(input_text.strip(), width=LINE_WIDTH)
+    else:
+        text = [input_text]
     if text == []:
         return
     
@@ -184,13 +187,13 @@ def wot_effect(input_text: str, img: Image):
         
     for i in range(len(text)):
         txt_width = d.textbbox((0, 0), text[i], font=font)[2]
-        x = (img_width - txt_width - (len(text[i]) * LETTER_SPACING))/2
+        x = (img_width - txt_width - (len(text[i]) * LETTER_SPACING)) / 2
 
         _draw_line(d=d, x=x, y=y, line=text[i], font=font, letter_spacing=LETTER_SPACING, fill=FILL, stroke_width=STROKE_WIDTH, stroke_fill=STROKE_FILL)
 
         y += txt_height + LINE_SPACING
         
-    img = img.resize((int(BASE_WIDTH/2), int(float(img.size[1]) * (BASE_WIDTH/2) / img.size[0])))
+    img = img.resize((int(BASE_WIDTH / 2), int(float(img.size[1]) * (BASE_WIDTH / 2) / img.size[0])))
     
     if img.mode in ("RGBA", "P"):
         img = img.convert("RGB")
@@ -240,7 +243,7 @@ def text_effect(text: str, img: Image):
 
         y += txt_height + LINE_SPACING
         
-    img = img.resize((int(BASE_WIDTH/2), int(float(img.size[1]) * (BASE_WIDTH/2) / img.size[0])))
+    img = img.resize((int(BASE_WIDTH / 2), int(float(img.size[1]) * (BASE_WIDTH / 2) / img.size[0])))
     
     if img.mode in ("RGBA", "P"):
         img = img.convert("RGB")
