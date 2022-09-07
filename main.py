@@ -244,10 +244,10 @@ def splash_check(info):
     
     if content.strip() == "":
         author = info['reply']['author']
+        input_text = f"{author}\n{reply}"
     else:
         author = info['content']['author']
-    
-    input_text = f"{author}\n{content}\n{reply}"
+        input_text = f"{author}\n{content}"
 
     if len(input_text.strip().split("\n")) < 2:
         return None
