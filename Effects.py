@@ -1,5 +1,5 @@
 from PIL import Image, ImageDraw, ImageFont, ImageEnhance
-import textwrap, os, random, time
+import textwrap, os, random, time, math
 
 random.seed(time.time())
 
@@ -99,16 +99,23 @@ def splash_effect(text: str, img: Image):
         return
     text.insert(0, first_line)
     
-    font_first = ImageFont.truetype(font=ARIAL_FONT_FILE, size=FONT_FIRST)
-    font_base = ImageFont.truetype(font=ARIAL_FONT_FILE, size=FONT_BASE)
-        
-    img_width, img_height = img.size
-    d = ImageDraw.Draw(img)
-        
-    _, _, first_txt_width, first_txt_height = d.textbbox((0, 0), text[0], font=font_first)
-    _, _, max_txt_width, txt_height = d.textbbox((0, 0), text[1], font=font_base)
+    while True:
+        font_first = ImageFont.truetype(font=ARIAL_FONT_FILE, size=int(FONT_BASE - (FONT_BASE / 2)))
+        font_base = ImageFont.truetype(font=ARIAL_FONT_FILE, size=FONT_BASE)
 
-    total_height = (txt_height + LINE_SPACING) * (len(text) - 1) + LINE_SPACING + first_txt_height
+        img_width, img_height = img.size
+        d = ImageDraw.Draw(img)
+
+        _, _, first_txt_width, first_txt_height = d.textbbox((0, 0), text[0], font=font_first)
+        _, _, max_txt_width, txt_height = d.textbbox((0, 0), text[1], font=font_base)
+
+        total_height = (txt_height + LINE_SPACING) * (len(text) - 1) + LINE_SPACING + first_txt_height
+
+        if (total_height < img_height / 2) or (FONT_BASE < 10):
+            break
+        
+        FONT_BASE = FONT_BASE - 5
+        
     y = (img_height - total_height) / 2
         
     for i in range(1, len(text)):
@@ -137,7 +144,7 @@ def splash_effect(text: str, img: Image):
     
     return img
 
-def wot_effect(text: str, img: Image):
+def wot_effect(input_text: str, img: Image):
     LETTER_SPACING = 1
     LINE_SPACING = 3  
     FILL = (255, 255, 255)
@@ -145,23 +152,40 @@ def wot_effect(text: str, img: Image):
     STROKE_FILL = (0, 0, 0)
     FONT_BASE = 50
     MARGIN = 10
-    LINE_WIDTH = 44
+    LINE_WIDTH = 43
     
     img = img.resize((BASE_WIDTH, int(img.size[1] * float(BASE_WIDTH / img.size[0]))))
     img = _darken_image(img)
     
-    text = textwrap.wrap(text, width=LINE_WIDTH)
+    img_width, img_height = img.size
+    d = ImageDraw.Draw(img)
+    
+    factor = img_width / img_height
+    #print("factor: " + str(factor))
+
+    text = textwrap.wrap(input_text, width=LINE_WIDTH)
     if text == []:
         return
     
-    font = ImageFont.truetype(font=ARIAL_FONT_FILE, size=FONT_BASE)
+    while True:
+        text = textwrap.wrap(input_text, width=LINE_WIDTH)
         
-    img_width, img_height = img.size
-    d = ImageDraw.Draw(img)
+        longest_line = text[0]
+        for line in text:
+            if len(line) > len(longest_line):
+                longest_line = line
         
-    _, _, txt_width, txt_height = d.textbbox((0, 0), text[0], font=font)
+        font = ImageFont.truetype(font=ARIAL_FONT_FILE, size=FONT_BASE)
+        _, _, txt_width, txt_height = d.textbbox((0, 0), longest_line, font=font)
+        total_height = (txt_height + LINE_SPACING) * len(text)
 
-    total_height = (txt_height + LINE_SPACING) * len(text)
+        if total_height < img_height or FONT_BASE < 5:
+            break
+        
+        FONT_BASE -= 3
+        LINE_WIDTH += int(factor * 3)
+        #print(LINE_WIDTH)
+    
     y = (img_height - total_height) / 2
         
     for i in range(len(text)):
@@ -238,15 +262,27 @@ def test_multiple(text, effect, modifier=""):
         print("Image test successful")
 
 def test(text, effect, modifier=""):
-        image = effect(text, Image.open("image.jpg"))
+        image = effect(text, Image.open("image.png"))
         image.save('output.jpg', optimize=True, quality=80)
 
         print("Image test successful")
 
 def main():
-    test("Autore più lungo del solito per vedere se va a capo\ntesto un po' più lungo ma non troppo eh\nquesto verrà scartato\npure questo lorem ipsum prova ", text_effect)
-    #test_multiple("top text\nbottom text", splash_effect)
-    #test_multiple("top text top text top text top text top text\nbottom text bottom text bottom text bottom text bottom text", splash_effect, "_long")
+    input_text = '''
+         Ho sodomizzato mio padre.
+
+Mi ha fatto venire in salotto (non c'era nessuno) et mi ha rimproverato perché faccio il neet a casa tutto il giorno.
+
+Di colpo,non só cosa mi abbia preso (di sicuro il fatto che non mi sia strofinato il pisello da 3 giorni),gli ho sculacciato il culone flaccido e gli ho detto che ero Io il nuovo papà in questa casa.Mi ha fissato negli occhi poi si é abbassato al livello del mio pantalone et lo scese.Mi tolse anche le mutandine sotto il mio sguardo scioccato ma non per tanto disgustato.
+
+Mi ha fatto un pompino strabiliante,il migliore mai ricevuto.Si é poi messo contro la poltrona e gli ho strappato il suo jean da obeso.L'ho sodomizzato come se non ci fosse un domani,persino quando spiavo i miei genitori mentre scopavano non gioii cosí tanto,era francamente magnifico.
+
+Mi ha appena inviato un messaggio,vuole il secondo round domani altrimenti mi caccia di casa,sono diventato il suo schiavo sessuale,ma mi piace.Dovrei chiedere alla mamma se vuole partecipate,sarebbe fico,anche se sarà difficile disseppellirla.
+'''
+    
+    test(input_text, wot_effect)
+    test_multiple(input_text, wot_effect)
+    #test_multiple(input_text, splash_effect, "_long")
     
 if __name__ ==  "__main__":
     main()
