@@ -1,5 +1,7 @@
 from PIL import Image, ImageDraw, ImageFont, ImageEnhance
-import textwrap, os       
+import textwrap, os, random, time
+
+random.seed(time.time())
 
 BASE_WIDTH = 1200
 IMPACT_FONT_FILE = os.path.join("fonts", "impact.ttf")
@@ -85,17 +87,18 @@ def splash_effect(text: str, img: Image):
     LINE_WIDTH = 20
     
     lines = [x for x in text.split("\n") if x]
-    if len(lines) < 2:
-        return img
+    first_line = lines.pop(0)
+    text = "\n".join(lines)
     
     img = img.resize((BASE_WIDTH, int(img.size[1] * float(BASE_WIDTH / img.size[0]))))
     
     img = _darken_image(img)
     
-    text = textwrap.wrap(lines[1].upper(), width=LINE_WIDTH)
+    text = textwrap.wrap(text.upper(), width=LINE_WIDTH)
     if text == []:
         return
-    text.insert(0, lines[0])
+    text.insert(0, first_line)
+    
     font_first = ImageFont.truetype(font=ARIAL_FONT_FILE, size=FONT_FIRST)
     font_base = ImageFont.truetype(font=ARIAL_FONT_FILE, size=FONT_BASE)
         
@@ -134,6 +137,98 @@ def splash_effect(text: str, img: Image):
     
     return img
 
+def wot_effect(text: str, img: Image):
+    LETTER_SPACING = 1
+    LINE_SPACING = 3  
+    FILL = (255, 255, 255)
+    STROKE_WIDTH = 1
+    STROKE_FILL = (0, 0, 0)
+    FONT_BASE = 50
+    MARGIN = 10
+    LINE_WIDTH = 44
+    
+    img = img.resize((BASE_WIDTH, int(img.size[1] * float(BASE_WIDTH / img.size[0]))))
+    img = _darken_image(img)
+    
+    text = textwrap.wrap(text, width=LINE_WIDTH)
+    if text == []:
+        return
+    
+    font = ImageFont.truetype(font=ARIAL_FONT_FILE, size=FONT_BASE)
+        
+    img_width, img_height = img.size
+    d = ImageDraw.Draw(img)
+        
+    _, _, txt_width, txt_height = d.textbbox((0, 0), text[0], font=font)
+
+    total_height = (txt_height + LINE_SPACING) * len(text)
+    y = (img_height - total_height) / 2
+        
+    for i in range(len(text)):
+        txt_width = d.textbbox((0, 0), text[i], font=font)[2]
+        x = (img_width - txt_width - (len(text[i]) * LETTER_SPACING))/2
+
+        _draw_line(d=d, x=x, y=y, line=text[i], font=font, letter_spacing=LETTER_SPACING, fill=FILL, stroke_width=STROKE_WIDTH, stroke_fill=STROKE_FILL)
+
+        y += txt_height + LINE_SPACING
+        
+    img = img.resize((int(BASE_WIDTH/2), int(float(img.size[1]) * (BASE_WIDTH/2) / img.size[0])))
+    
+    if img.mode in ("RGBA", "P"):
+        img = img.convert("RGB")
+    
+    return img
+
+def text_effect(text: str, img: Image):
+    LETTER_SPACING = 1
+    LINE_SPACING = 3
+    STROKE_WIDTH = 1
+    STROKE_FILL = (0, 0, 0)
+    FONT_BASE = 75
+    MARGIN = 10
+    LINE_WIDTH = 20
+    
+    img = img.resize((BASE_WIDTH, int(img.size[1] * float(BASE_WIDTH / img.size[0]))))
+    
+    text = textwrap.wrap(text, width=LINE_WIDTH)
+    if text == []:
+        return
+
+    font = ImageFont.truetype(font=ARIAL_FONT_FILE, size=FONT_BASE)
+    
+    img_width, img_height = img.size
+    d = ImageDraw.Draw(img)
+    
+    _, _, max_txt_width, txt_height = d.textbbox((0, 0), text[0], font=font)
+    
+    for line in text:
+        temp = int(font.getlength(line))
+        if temp > max_txt_width:
+            max_txt_width = temp
+    
+    
+    total_height = (txt_height + LINE_SPACING) * len(text)
+    
+    y_inf = 0
+    y_sup = img_height - total_height
+    x_inf = 0
+    x_sup = img_width - max_txt_width - 5
+    
+    fill = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+    x = random.randint(x_inf, x_sup)
+    y = random.randint(y_inf, y_sup)
+    for i in range(len(text)):
+        _draw_line(d=d, x=x, y=y, line=text[i], font=font, letter_spacing=LETTER_SPACING, fill=fill, stroke_width=STROKE_WIDTH, stroke_fill=STROKE_FILL)
+
+        y += txt_height + LINE_SPACING
+        
+    img = img.resize((int(BASE_WIDTH/2), int(float(img.size[1]) * (BASE_WIDTH/2) / img.size[0])))
+    
+    if img.mode in ("RGBA", "P"):
+        img = img.convert("RGB")
+    
+    return img
+
 def test_multiple(text, effect, modifier=""):
         imgs = os.listdir("test")
         for i in range(len(imgs)):
@@ -149,9 +244,9 @@ def test(text, effect, modifier=""):
         print("Image test successful")
 
 def main():
-    #test("Autore\ntesto un po' più lungo ma non troppo eh\nquesto verrà scartato\npure questo", splash_effect)
-    test_multiple("top text\nbottom text", splash_effect)
-    test_multiple("top text top text top text top text top text\nbottom text bottom text bottom text bottom text bottom text", splash_effect, "_long")
+    test("Autore più lungo del solito per vedere se va a capo\ntesto un po' più lungo ma non troppo eh\nquesto verrà scartato\npure questo lorem ipsum prova ", text_effect)
+    #test_multiple("top text\nbottom text", splash_effect)
+    #test_multiple("top text top text top text top text top text\nbottom text bottom text bottom text bottom text bottom text", splash_effect, "_long")
     
 if __name__ ==  "__main__":
     main()

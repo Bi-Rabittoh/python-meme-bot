@@ -1,7 +1,9 @@
 
 from PIL import Image, UnidentifiedImageError
 from io import BytesIO
-import requests, random, time, logging
+import requests, random, time, logging, time
+
+random.seed(time.time())
 
 base_url = "https://danbooru.donmai.us/"
 base_url_test = "https://testbooru.donmai.us/"
