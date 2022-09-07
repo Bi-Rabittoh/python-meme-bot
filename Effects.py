@@ -7,6 +7,19 @@ BASE_WIDTH = 1200
 IMPACT_FONT_FILE = os.path.join("fonts", "impact.ttf")
 ARIAL_FONT_FILE = os.path.join("fonts", "opensans.ttf")
 
+
+
+def _get_font_size(h, w, n, letter_spacing, line_spacing):
+    
+    k1 = 0.612123
+    k2 = 1.216428
+    k3 = 0.341428
+    k4 = 0.364576
+    
+    font_size = (math.sqrt(4 * k1 * k2 * h * n * w + math.pow(k2, 2) * math.pow(n, 2) * math.pow(letter_spacing, 2) + ((2 * k1 * k2 * k3 - 2 * k4 * math.pow(k2, 2)) * math.pow(n, 2) - 2 * k1 * k2 * line_spacing) * letter_spacing + math.pow(k1, 2) * math.pow(n, 2) * math.pow(line_spacing, 2) + (2 * k1 * k4 * k2 - 2 * math.pow(k1, 2) * k3) * math.pow(n, 2) * line_spacing + (math.pow(k1, 2) * math.pow(k3, 2) - 2 * k1 * k4 * k2 * k3 + math.pow(k4, 2) * math.pow(k2, 2)) * math.pow(n, 2)) - k2 * n * letter_spacing - k1 * n * line_spacing + (k1 * k3 + k4 * k2) * n) / (2 * k1 * k2 * n)
+    line_width = w / (k1 * font_size - k4 + letter_spacing)
+    return font_size, line_width
+
 def _darken_image(image: Image, amount=0.5):
     return ImageEnhance.Brightness(image).enhance(amount)
 
@@ -94,13 +107,8 @@ def splash_effect(input_text: str, img: Image):
     w = img_width - MARGIN_W
     h = img_height - MARGIN_H
     n = len(input_text.strip())
-    k1 = 0.612123
-    k2 = 1.216428
-    k3 = 0.341428
-    k4 = 0.364576
     
-    FONT_BASE = (math.sqrt(4 * k1 * k2 * h * n * w + math.pow(k2, 2) * math.pow(n, 2) * math.pow(LETTER_SPACING, 2) + ((2 * k1 * k2 * k3 - 2 * k4 * math.pow(k2, 2)) * math.pow(n, 2) - 2 * k1 * k2 * LINE_SPACING) * LETTER_SPACING + math.pow(k1, 2) * math.pow(n, 2) * math.pow(LINE_SPACING, 2) + (2 * k1 * k4 * k2 - 2 * math.pow(k1, 2) * k3) * math.pow(n, 2) * LINE_SPACING + (math.pow(k1, 2) * math.pow(k3, 2) - 2 * k1 * k4 * k2 * k3 + math.pow(k4, 2) * math.pow(k2, 2)) * math.pow(n, 2)) - k2 * n * LETTER_SPACING - k1 * n * LINE_SPACING + (k1 * k3 + k4 * k2) * n) / (2 * k1 * k2 * n)
-    LINE_WIDTH = w / (k1 * FONT_BASE - k4 + LETTER_SPACING)
+    FONT_BASE, LINE_WIDTH = _get_font_size(h, w, n, LETTER_SPACING, LINE_SPACING)
     
     lines = [x for x in input_text.split("\n") if x]
     first_line = lines.pop(0)
@@ -139,11 +147,7 @@ def splash_effect(input_text: str, img: Image):
     x_start = (img_width - max_txt_width) / 2
         
     for i in range(len(text)):
-        '''
-        if align == "center":
-            txt_width = d.textbbox((0, 0), line, font=font)[2]
-            x = (img_width - txt_width - (len(line) * LETTER_SPACING)) / 2
-        '''
+        
         font = font_base if i > 0 else font_first
         _draw_line(d=d, x=x_start, y=y, line=text[i], font=font, letter_spacing=LETTER_SPACING, fill=FILL, stroke_width=STROKE_WIDTH, stroke_fill=STROKE_FILL)
 
@@ -174,13 +178,8 @@ def wot_effect(input_text: str, img: Image):
     w = img_width - MARGIN_W
     h = img_height - MARGIN_H
     n = len(input_text.strip())
-    k1 = 0.612123
-    k2 = 1.216428
-    k3 = 0.341428
-    k4 = 0.364576
     
-    FONT_BASE = (math.sqrt(4 * k1 * k2 * h * n * w + math.pow(k2, 2) * math.pow(n, 2) * math.pow(LETTER_SPACING, 2) + ((2 * k1 * k2 * k3 - 2 * k4 * math.pow(k2, 2)) * math.pow(n, 2) - 2 * k1 * k2 * LINE_SPACING) * LETTER_SPACING + math.pow(k1, 2) * math.pow(n, 2) * math.pow(LINE_SPACING, 2) + (2 * k1 * k4 * k2 - 2 * math.pow(k1, 2) * k3) * math.pow(n, 2) * LINE_SPACING + (math.pow(k1, 2) * math.pow(k3, 2) - 2 * k1 * k4 * k2 * k3 + math.pow(k4, 2) * math.pow(k2, 2)) * math.pow(n, 2)) - k2 * n * LETTER_SPACING - k1 * n * LINE_SPACING + (k1 * k3 + k4 * k2) * n) / (2 * k1 * k2 * n)
-    LINE_WIDTH = w / (k1 * FONT_BASE - k4 + LETTER_SPACING)
+    FONT_BASE, LINE_WIDTH = _get_font_size(h, w, n, LETTER_SPACING, LINE_SPACING)
 
     text = textwrap.wrap(input_text.strip(), width=int(LINE_WIDTH))
 
