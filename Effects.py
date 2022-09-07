@@ -150,43 +150,37 @@ def wot_effect(input_text: str, img: Image):
     FILL = (255, 255, 255)
     STROKE_WIDTH = 1
     STROKE_FILL = (0, 0, 0)
-    FONT_BASE = 50
-    MARGIN = 10
-    LINE_WIDTH = 43
+    FONT_BASE = 10
     
     img = img.resize((BASE_WIDTH, int(img.size[1] * float(BASE_WIDTH / img.size[0]))))
     img = _darken_image(img)
     
     img_width, img_height = img.size
-    d = ImageDraw.Draw(img)
     
-    factor = img_width / img_height
-    #print("factor: " + str(factor))
-
+    MARGIN_H = img_height / 4
+    MARGIN_W = 0
+    
+    w = img_width - MARGIN_W
+    h = img_height - MARGIN_H
+    n = len(input_text.strip())
+    k1 = 0.612123
+    k2 = 1.216428
+    k3 = 0.341428
+    k4 = 0.364576
+    
+    FONT_BASE = (math.sqrt(4 * k1 * k2 * h * n * w + math.pow(k2,2) * math.pow(n,2) * math.pow(LETTER_SPACING,2) + ((2 * k1 * k2 * k3 - 2 * k4 * math.pow(k2,2)) * math.pow(n,2) - 2 * k1 * k2 * LINE_SPACING) * LETTER_SPACING + math.pow(k1,2) * math.pow(n,2) * math.pow(LINE_SPACING,2) + (2 * k1 * k4 * k2 - 2 * math.pow(k1,2) * k3) * math.pow(n,2) * LINE_SPACING + (math.pow(k1,2) * math.pow(k3,2) - 2 * k1 * k4 * k2 * k3 + math.pow(k4,2) * math.pow(k2,2)) * math.pow(n,2)) - k2 * n * LETTER_SPACING - k1 * n * LINE_SPACING + (k1 * k3 + k4 * k2) * n) / (2 * k1 * k2 * n)
+    LINE_WIDTH = w / (k1 * FONT_BASE - k4 + LETTER_SPACING)
+    
     text = textwrap.wrap(input_text, width=LINE_WIDTH)
     if text == []:
         return
     
-    while True:
-        text = textwrap.wrap(input_text, width=LINE_WIDTH)
-        
-        longest_line = text[0]
-        for line in text:
-            if len(line) > len(longest_line):
-                longest_line = line
-        
-        font = ImageFont.truetype(font=ARIAL_FONT_FILE, size=FONT_BASE)
-        _, _, txt_width, txt_height = d.textbbox((0, 0), longest_line, font=font)
-        total_height = (txt_height + LINE_SPACING) * len(text)
-
-        if total_height < img_height or FONT_BASE < 5:
-            break
-        
-        FONT_BASE -= 3
-        LINE_WIDTH += int(factor * 3)
-        #print(LINE_WIDTH)
+    font = ImageFont.truetype(font=ARIAL_FONT_FILE, size=int(FONT_BASE))
+    d = ImageDraw.Draw(img)
     
-    y = (img_height - total_height) / 2
+    txt_height = (k2 * FONT_BASE - k3 + LINE_SPACING)
+    max_text_height = txt_height * len(text)
+    y = (img_height - max_text_height) / 2
         
     for i in range(len(text)):
         txt_width = d.textbbox((0, 0), text[i], font=font)[2]
@@ -262,25 +256,18 @@ def test_multiple(text, effect, modifier=""):
         print("Image test successful")
 
 def test(text, effect, modifier=""):
-        image = effect(text, Image.open("image.png"))
+        image = effect(text, Image.open("image.jpg"))
         image.save('output.jpg', optimize=True, quality=80)
 
         print("Image test successful")
 
 def main():
     input_text = '''
-         Ho sodomizzato mio padre.
-
-Mi ha fatto venire in salotto (non c'era nessuno) et mi ha rimproverato perché faccio il neet a casa tutto il giorno.
-
-Di colpo,non só cosa mi abbia preso (di sicuro il fatto che non mi sia strofinato il pisello da 3 giorni),gli ho sculacciato il culone flaccido e gli ho detto che ero Io il nuovo papà in questa casa.Mi ha fissato negli occhi poi si é abbassato al livello del mio pantalone et lo scese.Mi tolse anche le mutandine sotto il mio sguardo scioccato ma non per tanto disgustato.
-
-Mi ha fatto un pompino strabiliante,il migliore mai ricevuto.Si é poi messo contro la poltrona e gli ho strappato il suo jean da obeso.L'ho sodomizzato come se non ci fosse un domani,persino quando spiavo i miei genitori mentre scopavano non gioii cosí tanto,era francamente magnifico.
-
-Mi ha appena inviato un messaggio,vuole il secondo round domani altrimenti mi caccia di casa,sono diventato il suo schiavo sessuale,ma mi piace.Dovrei chiedere alla mamma se vuole partecipate,sarebbe fico,anche se sarà difficile disseppellirla.
+Caught my gf pooping...so I broke up with her
+She said shes off to pee while were watching a movie, now shes been gone 5 minutes and i knew something was up, i knocked on the door and asked if everything is ok, she said yes she'll be right out...her voice was labored and i became suspicious...so i yelled "IM COMING IN!' she screamed no but there was no stopping this, i smashed through the door and i see her sitting on the toilet seat, i told her to get the fuk up, she didnt so i threw her off, i looked inside the toilet...just as i suspected, a goddam log, bitch u better pray this isnt yours. i looked around and saw no pet in site, I KNOW THIS IS UR POOP U WHORE, she screamed at me that im crazy and that shes calling the cops, all the while toilet paper in her hands. i told her no need to call the cops, im breaking up with u u some kinda poop whore. and that was that. I feel like a new man and off to find a woman who doesnt poop
 '''
     
-    test(input_text, wot_effect)
+    #test(input_text, wot_effect)
     test_multiple(input_text, wot_effect)
     #test_multiple(input_text, splash_effect, "_long")
     
