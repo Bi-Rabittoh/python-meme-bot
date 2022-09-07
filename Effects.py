@@ -75,46 +75,58 @@ def tt_bt_effect(text: str, img: Image):
     
     return img
 
-def splash_effect(text: str, img: Image):
+def splash_effect(input_text: str, img: Image):
     LETTER_SPACING = 1
     LINE_SPACING = 3  
     FILL = (255, 255, 255)
     STROKE_WIDTH = 1
     STROKE_FILL = (0, 0, 0)
-    FONT_FIRST = 50
-    FONT_BASE = 75
-    MARGIN = 10
-    LINE_WIDTH = 20
-    
-    lines = [x for x in text.split("\n") if x]
-    first_line = lines.pop(0)
-    text = "\n".join(lines)
     
     img = img.resize((BASE_WIDTH, int(img.size[1] * float(BASE_WIDTH / img.size[0]))))
     
     img = _darken_image(img)
     
-    text = textwrap.wrap(text.upper(), width=LINE_WIDTH)
+    img_width, img_height = img.size
+    
+    MARGIN_H = img_height / 2
+    MARGIN_W = img_width / 2
+    
+    w = img_width - MARGIN_W
+    h = img_height - MARGIN_H
+    n = len(input_text.strip())
+    k1 = 0.612123
+    k2 = 1.216428
+    k3 = 0.341428
+    k4 = 0.364576
+    
+    FONT_BASE = (math.sqrt(4 * k1 * k2 * h * n * w + math.pow(k2, 2) * math.pow(n, 2) * math.pow(LETTER_SPACING, 2) + ((2 * k1 * k2 * k3 - 2 * k4 * math.pow(k2, 2)) * math.pow(n, 2) - 2 * k1 * k2 * LINE_SPACING) * LETTER_SPACING + math.pow(k1, 2) * math.pow(n, 2) * math.pow(LINE_SPACING, 2) + (2 * k1 * k4 * k2 - 2 * math.pow(k1, 2) * k3) * math.pow(n, 2) * LINE_SPACING + (math.pow(k1, 2) * math.pow(k3, 2) - 2 * k1 * k4 * k2 * k3 + math.pow(k4, 2) * math.pow(k2, 2)) * math.pow(n, 2)) - k2 * n * LETTER_SPACING - k1 * n * LINE_SPACING + (k1 * k3 + k4 * k2) * n) / (2 * k1 * k2 * n)
+    LINE_WIDTH = w / (k1 * FONT_BASE - k4 + LETTER_SPACING)
+    
+    lines = [x for x in input_text.split("\n") if x]
+    first_line = lines.pop(0)
+    text = "\n".join(lines)
+    
+    #f = (img_width / img_height) * 2
+    f = (img_height / img_width) * 2
+    
+    FONT_BASE /= f
+    LINE_WIDTH *= f * 2
+
+    text = textwrap.wrap(text.upper(), width=int(LINE_WIDTH))
+        
     if text == []:
         return
     text.insert(0, first_line)
-    
-    while True:
-        font_first = ImageFont.truetype(font=ARIAL_FONT_FILE, size=int(FONT_BASE - (FONT_BASE / 2)))
-        font_base = ImageFont.truetype(font=ARIAL_FONT_FILE, size=FONT_BASE)
 
-        img_width, img_height = img.size
-        d = ImageDraw.Draw(img)
+    font_first = ImageFont.truetype(font=ARIAL_FONT_FILE, size=int(FONT_BASE - (FONT_BASE / 2)))
+    font_base = ImageFont.truetype(font=ARIAL_FONT_FILE, size=int(FONT_BASE))
 
-        _, _, first_txt_width, first_txt_height = d.textbbox((0, 0), text[0], font=font_first)
-        _, _, max_txt_width, txt_height = d.textbbox((0, 0), text[1], font=font_base)
+    d = ImageDraw.Draw(img)
 
-        total_height = (txt_height + LINE_SPACING) * (len(text) - 1) + LINE_SPACING + first_txt_height
+    _, _, first_txt_width, first_txt_height = d.textbbox((0, 0), text[0], font=font_first)
+    _, _, max_txt_width, txt_height = d.textbbox((0, 0), text[1], font=font_base)
 
-        if (total_height < img_height / 2) or (FONT_BASE < 10):
-            break
-        
-        FONT_BASE = FONT_BASE - 5
+    total_height = (txt_height + LINE_SPACING) * (len(text) - 1) + LINE_SPACING + first_txt_height
         
     y = (img_height - total_height) / 2
         
@@ -150,7 +162,6 @@ def wot_effect(input_text: str, img: Image):
     FILL = (255, 255, 255)
     STROKE_WIDTH = 1
     STROKE_FILL = (0, 0, 0)
-    FONT_BASE = 10
     
     img = img.resize((BASE_WIDTH, int(img.size[1] * float(BASE_WIDTH / img.size[0]))))
     img = _darken_image(img)
@@ -170,11 +181,9 @@ def wot_effect(input_text: str, img: Image):
     
     FONT_BASE = (math.sqrt(4 * k1 * k2 * h * n * w + math.pow(k2, 2) * math.pow(n, 2) * math.pow(LETTER_SPACING, 2) + ((2 * k1 * k2 * k3 - 2 * k4 * math.pow(k2, 2)) * math.pow(n, 2) - 2 * k1 * k2 * LINE_SPACING) * LETTER_SPACING + math.pow(k1, 2) * math.pow(n, 2) * math.pow(LINE_SPACING, 2) + (2 * k1 * k4 * k2 - 2 * math.pow(k1, 2) * k3) * math.pow(n, 2) * LINE_SPACING + (math.pow(k1, 2) * math.pow(k3, 2) - 2 * k1 * k4 * k2 * k3 + math.pow(k4, 2) * math.pow(k2, 2)) * math.pow(n, 2)) - k2 * n * LETTER_SPACING - k1 * n * LINE_SPACING + (k1 * k3 + k4 * k2) * n) / (2 * k1 * k2 * n)
     LINE_WIDTH = w / (k1 * FONT_BASE - k4 + LETTER_SPACING)
-    
-    if len(input_text) > LINE_WIDTH:
-        text = textwrap.wrap(input_text.strip(), width=LINE_WIDTH)
-    else:
-        text = [input_text]
+
+    text = textwrap.wrap(input_text.strip(), width=int(LINE_WIDTH))
+
     if text == []:
         return
     
@@ -265,13 +274,12 @@ def test(text, effect, modifier=""):
         print("Image test successful")
 
 def main():
-    input_text = '''
-Caught my gf pooping...so I broke up with her
-She said shes off to pee while were watching a movie, now shes been gone 5 minutes and i knew something was up, i knocked on the door and asked if everything is ok, she said yes she'll be right out...her voice was labored and i became suspicious...so i yelled "IM COMING IN!' she screamed no but there was no stopping this, i smashed through the door and i see her sitting on the toilet seat, i told her to get the fuk up, she didnt so i threw her off, i looked inside the toilet...just as i suspected, a goddam log, bitch u better pray this isnt yours. i looked around and saw no pet in site, I KNOW THIS IS UR POOP U WHORE, she screamed at me that im crazy and that shes calling the cops, all the while toilet paper in her hands. i told her no need to call the cops, im breaking up with u u some kinda poop whore. and that was that. I feel like a new man and off to find a woman who doesnt poop
+    input_text = '''Bi-Rabittoh
+Prova wow
 '''
     
-    #test(input_text, wot_effect)
-    test_multiple(input_text, wot_effect)
+    test(input_text, splash_effect)
+    #test_multiple(input_text, splash_effect)
     #test_multiple(input_text, splash_effect, "_long")
     
 if __name__ ==  "__main__":
