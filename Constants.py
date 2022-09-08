@@ -1,3 +1,5 @@
+import logging
+
 localization = {
     'us': {
         'welcome' : "Welcome to PILuAnimeBot!",
@@ -8,6 +10,7 @@ localization = {
         'disabled' : "disabled",
         'unknown' : "Sorry, I didn't understand that command.",
         'error': "An error has occurred. Please retry.",
+        'failed_effect': "Couldn't apply effect."
     },
     'it': {
         'welcome' : "Benvenuto da PILuAnimeBot!",
@@ -18,6 +21,7 @@ localization = {
         'disabled' : "disabilitata",
         'unknown' : "Non ho capito.",
         'error': "Qualcosa è andato storto, riprova.",
+        'failed_effect': "Impossibile applicare l'effetto."
     },
 }
 

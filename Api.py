@@ -53,8 +53,6 @@ def get_random_image(rating=rating_normal, tags=""):
         page = requests.get(base_url + page_suffix, params).json()
         n = random.randint(0, params['limit'] - 1)
         
-        #print("Page: " + str(params['page']))
-        #print("File: " + str(n))
         try:
             file_url = page[n]['file_url']
             if not _valid_extension(file_url):

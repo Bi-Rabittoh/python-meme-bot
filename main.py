@@ -1,6 +1,6 @@
 from PIL import Image
 from Api import get_random_image, rating_normal, rating_lewd
-from Effects import tt_bt_effect, splash_effect, wot_effect, text_effect
+from Effects import img_to_bio, tt_bt_effect, bt_effect, splash_effect, wot_effect, text_effect
 from Constants import get_localized_string as l
 
 from dotenv import load_dotenv
@@ -19,17 +19,6 @@ def _get_args(context):
     
     logging.info(context.args)
     return ' '.join(context.args)
-
-def _img_to_bio(image):
-    
-    bio = BytesIO()
-    
-    if image.mode in ("RGBA", "P"):
-        image = image.convert("RGB")
-
-    image.save(bio, 'JPEG')
-    bio.seek(0)
-    return bio
 
 def _get_message_content(message):
     
@@ -89,7 +78,7 @@ def _get_image(context, tag="", bio=True):
     markup = InlineKeyboardMarkup([[InlineKeyboardButton(text=l("sauce", lang), url=url)]])
     
     if bio:
-        return _img_to_bio(image), markup
+        return image, markup
     return image, markup
 
 def _get_all(update, check_fn, context):
@@ -110,7 +99,7 @@ def _get_all(update, check_fn, context):
         }
     }
         
-    logging.info(f"User {update.message.from_user.username} typed: {str(update.message.text)}")
+    logging.info(f"User {update.message.from_user.full_name} (@{update.message.from_user.username}) typed: {str(update.message.text)}")
     
     content = check_fn(info_struct)
     
@@ -154,7 +143,7 @@ def pic(update: Update, context: CallbackContext):
         tag = ""
 
     image, markup = _get_image(context, tag)
-    update.message.reply_photo(photo=image, parse_mode="markdown", reply_markup=markup)
+    update.message.reply_photo(photo=img_to_bio(image), parse_mode="markdown", reply_markup=markup)
 
 def raw(update: Update, context: CallbackContext):
     
@@ -277,7 +266,11 @@ def ttbt(update: Update, context: CallbackContext):
         update.message.reply_text(l("no_caption", lang))
         return
     
-    image = _img_to_bio(tt_bt_effect(content, image))
+    image = tt_bt_effect(content, image)
+
+    if image is None:
+        update.message.reply_text(l("failed_effect", lang))
+
     update.message.reply_photo(photo=image, reply_markup=markup)
 
 
@@ -289,7 +282,11 @@ def tt(update: Update, context: CallbackContext):
         update.message.reply_text(l("no_caption", lang))
         return
     
-    image = _img_to_bio(tt_bt_effect(content, image))
+    image = tt_bt_effect(content, image)
+
+    if image is None:
+        update.message.reply_text(l("failed_effect", lang))
+
     update.message.reply_photo(photo=image, reply_markup=markup)
     
 def bt(update: Update, context: CallbackContext):
@@ -299,8 +296,12 @@ def bt(update: Update, context: CallbackContext):
     if image is None:
         update.message.reply_text(l("no_caption", lang))
         return
-    
-    image = _img_to_bio(tt_bt_effect("‎\n" + content, image))
+
+    image = bt_effect(content, image)
+
+    if image is None:
+        update.message.reply_text(l("failed_effect", lang))
+
     update.message.reply_photo(photo=image, reply_markup=markup)
 
 def splash(update: Update, context: CallbackContext):
@@ -311,7 +312,11 @@ def splash(update: Update, context: CallbackContext):
         update.message.reply_text(l("no_caption", lang))
         return
     
-    image = _img_to_bio(splash_effect(content, image))
+    image = splash_effect(content, image)
+
+    if image is None:
+        update.message.reply_text(l("failed_effect", lang))
+    
     update.message.reply_photo(photo=image, reply_markup=markup)
     
 def wot(update: Update, context: CallbackContext):
@@ -322,7 +327,11 @@ def wot(update: Update, context: CallbackContext):
         update.message.reply_text(l("no_caption", lang))
         return
     
-    image = _img_to_bio(wot_effect(content, image))
+    image = wot_effect(content, image)
+
+    if image is None:
+        update.message.reply_text(l("failed_effect", lang))
+    
     update.message.reply_photo(photo=image, reply_markup=markup)
     
 def text(update: Update, context: CallbackContext):
@@ -333,7 +342,11 @@ def text(update: Update, context: CallbackContext):
         update.message.reply_text(l("no_caption", lang))
         return
     
-    image = _img_to_bio(text_effect(content, image))
+    image = text_effect(content, image)
+
+    if image is None:
+        update.message.reply_text(l("failed_effect", lang))
+    
     update.message.reply_photo(photo=image, reply_markup=markup)
 
 def caps(update: Update, context: CallbackContext):
@@ -342,7 +355,7 @@ def caps(update: Update, context: CallbackContext):
     context.bot.send_message(chat_id=update.effective_chat.id, text=reply.upper())
     
 def unknown(update: Update, context: CallbackContext):
-    logging.info(f"User {update.message.from_user.username} sent {update.message.text_markdown_v2} and I don't know what that means.")
+    logging.info(f"User {update.message.from_user.full_name} sent {update.message.text_markdown_v2} and I don't know what that means.")
     
 def error_callback(update: Update, context: CallbackContext):
     try:

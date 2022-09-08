@@ -1,4 +1,5 @@
 from PIL import Image, ImageDraw, ImageFont, ImageEnhance
+from io import BytesIO
 import textwrap, os, random, time, math
 
 random.seed(time.time())
@@ -7,18 +8,34 @@ BASE_WIDTH = 1200
 IMPACT_FONT_FILE = os.path.join("fonts", "impact.ttf")
 ARIAL_FONT_FILE = os.path.join("fonts", "opensans.ttf")
 
+k1 = 0.612123
+k2 = 1.216428
+k3 = 0.341428
+k4 = 0.364576
 
+'''
+k1 = 0.6
+k2 = 2 * k1
+k3 = k1 / 2
+k4 = k3
+'''
 
 def _get_font_size(h, w, n, letter_spacing, line_spacing):
-    
-    k1 = 0.612123
-    k2 = 1.216428
-    k3 = 0.341428
-    k4 = 0.364576
-    
+
     font_size = (math.sqrt(4 * k1 * k2 * h * n * w + math.pow(k2, 2) * math.pow(n, 2) * math.pow(letter_spacing, 2) + ((2 * k1 * k2 * k3 - 2 * k4 * math.pow(k2, 2)) * math.pow(n, 2) - 2 * k1 * k2 * line_spacing) * letter_spacing + math.pow(k1, 2) * math.pow(n, 2) * math.pow(line_spacing, 2) + (2 * k1 * k4 * k2 - 2 * math.pow(k1, 2) * k3) * math.pow(n, 2) * line_spacing + (math.pow(k1, 2) * math.pow(k3, 2) - 2 * k1 * k4 * k2 * k3 + math.pow(k4, 2) * math.pow(k2, 2)) * math.pow(n, 2)) - k2 * n * letter_spacing - k1 * n * line_spacing + (k1 * k3 + k4 * k2) * n) / (2 * k1 * k2 * n)
     line_width = w / (k1 * font_size - k4 + letter_spacing)
     return font_size, line_width
+
+def img_to_bio(image):
+    
+    bio = BytesIO()
+    
+    if image.mode in ("RGBA", "P"):
+        image = image.convert("RGB")
+
+    image.save(bio, 'JPEG')
+    bio.seek(0)
+    return bio
 
 def _darken_image(image: Image, amount=0.5):
     return ImageEnhance.Brightness(image).enhance(amount)
@@ -29,7 +46,8 @@ def _draw_line(d: ImageDraw, x: int, y: int, line: str, font: ImageFont, letter_
                 d.text((x, y), line[i], fill=fill, stroke_width=stroke_width, font=font, stroke_fill=stroke_fill)
                 x += font.getlength(line[i]) + letter_spacing
 
-def tt_bt_effect(text: str, img: Image):
+def _draw_tt_bt(text: str, img: Image, bottom=False):
+        
     LETTER_SPACING = 9
     LINE_SPACING = 10  
     FILL = (255, 255, 255)
@@ -37,34 +55,54 @@ def tt_bt_effect(text: str, img: Image):
     STROKE_FILL = (0, 0, 0)
     FONT_BASE = 100
     MARGIN = 10
+
+    split_caption = textwrap.wrap(text.upper(), width=20)
+    if split_caption == []:
+        return
+    font_size = FONT_BASE + 10 if len(split_caption) <= 1 else FONT_BASE
+    font = ImageFont.truetype(font=IMPACT_FONT_FILE, size=font_size)
+    img_width, img_height = img.size
+
+    d = ImageDraw.Draw(img)
+    txt_height = d.textbbox((0, 0), split_caption[0], font=font)[3]
+
+    if bottom:
+        factor = -1
+        split_caption.reverse()
+        y = (img_height - (img_height / MARGIN)) - (txt_height / 2)
+    else:
+        factor = 1
+        y = (img_height / MARGIN) - (txt_height / 1.5)
+
+    for line in split_caption:
+        txt_width = d.textbbox((0, 0), line, font=font)[2]
+
+        x = (img_width - txt_width - (len(line) * LETTER_SPACING)) / 2
+
+        _draw_line(d, x, y, line, font, LETTER_SPACING, FILL, STROKE_WIDTH, STROKE_FILL)
+
+        y += (txt_height + LINE_SPACING) * factor
+
+def bt_effect(text: str, img: Image):
+
+    lines = [x for x in text.split("\n") if x]
+    bt = lines[0] if len(lines) > 0 else None
     
-    def _draw_tt_bt(text, img, bottom=False):
-        split_caption = textwrap.wrap(text.upper(), width=20)
-        if split_caption == []:
-            return
-        font_size = FONT_BASE + 10 if len(split_caption) <= 1 else FONT_BASE
-        font = ImageFont.truetype(font=IMPACT_FONT_FILE, size=font_size)
-        img_width, img_height = img.size
+    img = img.resize((BASE_WIDTH, int(img.size[1] * float(BASE_WIDTH / img.size[0]))))
+    
+    if bt is None:
+        return img
+    
+    _draw_tt_bt(bt, img, bottom=True)
 
-        d = ImageDraw.Draw(img)
-        txt_height = d.textbbox((0, 0), split_caption[0], font=font)[3]
+    img = img.resize((int(BASE_WIDTH / 2), int(float(img.size[1]) * (BASE_WIDTH / 2) / img.size[0])))
+    
+    if img.mode in ("RGBA", "P"):
+        img = img.convert("RGB")
+    
+    return img_to_bio(img)
 
-        if bottom:
-            factor = -1
-            split_caption.reverse()
-            y = (img_height - (img_height / MARGIN)) - (txt_height / 2)
-        else:
-            factor = 1
-            y = (img_height / MARGIN) - (txt_height / 1.5)
-
-        for line in split_caption:
-            txt_width = d.textbbox((0, 0), line, font=font)[2]
-
-            x = (img_width - txt_width - (len(line) * LETTER_SPACING)) / 2
-
-            _draw_line(d, x, y, line, font, LETTER_SPACING, FILL, STROKE_WIDTH, STROKE_FILL)
-
-            y += (txt_height + LINE_SPACING) * factor
+def tt_bt_effect(text: str, img: Image):
     
     lines = [x for x in text.split("\n") if x]
     
@@ -86,7 +124,7 @@ def tt_bt_effect(text: str, img: Image):
     if img.mode in ("RGBA", "P"):
         img = img.convert("RGB")
     
-    return img
+    return img_to_bio(img)
 
 def splash_effect(input_text: str, img: Image):
     LETTER_SPACING = 1
@@ -107,7 +145,7 @@ def splash_effect(input_text: str, img: Image):
     
     FONT_BASE, LINE_WIDTH = _get_font_size(h, w, n, LETTER_SPACING, LINE_SPACING)
     
-    lines = [x for x in input_text.split("\n") if x]
+    lines = [ x for x in input_text.split("\n") if x ]
     first_line = lines.pop(0)
     text = "\n".join(lines)
     
@@ -152,7 +190,7 @@ def splash_effect(input_text: str, img: Image):
     if img.mode in ("RGBA", "P"):
         img = img.convert("RGB")
     
-    return img
+    return img_to_bio(img)
 
 def wot_effect(input_text: str, img: Image):
     LETTER_SPACING = 1
@@ -166,19 +204,23 @@ def wot_effect(input_text: str, img: Image):
     
     img_width, img_height = img.size
     
-    MARGIN_H = img_height / 4
+    n = len(input_text.strip())
+
+    MARGIN_H = img_height / (n / 270)
     MARGIN_W = 0
     
     w = img_width - MARGIN_W
     h = img_height - MARGIN_H
-    n = len(input_text.strip())
     
-    FONT_BASE, LINE_WIDTH = _get_font_size(h, w, n, LETTER_SPACING, LINE_SPACING)
+    try:
+        FONT_BASE, LINE_WIDTH = _get_font_size(h, w, n, LETTER_SPACING, LINE_SPACING)
+    except ValueError:
+        return None
 
     text = textwrap.wrap(input_text.strip(), width=int(LINE_WIDTH))
 
     if text == []:
-        return
+        return None
     
     font = ImageFont.truetype(font=ARIAL_FONT_FILE, size=int(FONT_BASE))
     d = ImageDraw.Draw(img)
@@ -200,7 +242,7 @@ def wot_effect(input_text: str, img: Image):
     if img.mode in ("RGBA", "P"):
         img = img.convert("RGB")
     
-    return img
+    return img_to_bio(img)
 
 def text_effect(text: str, img: Image):
     LETTER_SPACING = 1
@@ -253,31 +295,33 @@ def text_effect(text: str, img: Image):
     if img.mode in ("RGBA", "P"):
         img = img.convert("RGB")
     
-    return img
+    return img_to_bio(img)
 
 def test_multiple(text, effect, modifier=""):
-    
+
         imgs = os.listdir("test")
         for i in range(len(imgs)):
             image = effect(text, Image.open(os.path.join("test", imgs[i])))
-            image.save(os.path.join("test_output", f'output{modifier}{i}.jpg'), optimize=True, quality=80)
+            Image.open(image).save(os.path.join("test_output", f'output{modifier}{i}.jpg'), optimize=True, quality=80)
 
         print("Image test successful")
 
 def test(text, effect, modifier=""):
-    
+
         image = effect(text, Image.open("image.jpg"))
-        image.save('output.jpg', optimize=True, quality=80)
+        Image.open(image).save('output.jpg', optimize=True, quality=80)
 
         print("Image test successful")
 
 def main():
-    input_text = '''Bi-Rabittoh
-Prova wow
+    input_text = '''
+Il giornalista italiano Mattia Sorbi è stato ferito nella zona occupata di Kherson. Non aveva con sé un interprete, l'autista che lo accompagnava sarebbe morto. 
+
+Godo
 '''
     
     #test(input_text, splash_effect)
-    test_multiple(input_text, splash_effect)
+    test_multiple(input_text, tt_bt_effect)
     #test_multiple(input_text, splash_effect, "_long")
     
 if __name__ ==  "__main__":
