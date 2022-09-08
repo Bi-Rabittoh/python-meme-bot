@@ -101,11 +101,8 @@ def splash_effect(input_text: str, img: Image):
     
     img_width, img_height = img.size
     
-    MARGIN_H = img_height / 2
-    MARGIN_W = img_width / 2
-    
-    w = img_width - MARGIN_W
-    h = img_height - MARGIN_H
+    w = img_width / 2
+    h = img_height / 2
     n = len(input_text.strip())
     
     FONT_BASE, LINE_WIDTH = _get_font_size(h, w, n, LETTER_SPACING, LINE_SPACING)
@@ -114,11 +111,8 @@ def splash_effect(input_text: str, img: Image):
     first_line = lines.pop(0)
     text = "\n".join(lines)
     
-    #f = (img_width / img_height) * 2
-    f = (img_height / img_width) * 2
-    
-    FONT_BASE /= f
-    LINE_WIDTH *= f * 2
+    FONT_BASE /= 2
+    LINE_WIDTH *= 2
 
     text = textwrap.wrap(text.upper(), width=int(LINE_WIDTH))
         
@@ -231,6 +225,7 @@ def text_effect(text: str, img: Image):
     _, _, max_txt_width, txt_height = d.textbbox((0, 0), text[0], font=font)
     
     for line in text:
+        
         temp = int(font.getlength(line))
         if temp > max_txt_width:
             max_txt_width = temp
@@ -246,7 +241,9 @@ def text_effect(text: str, img: Image):
     fill = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
     x = random.randint(x_inf, x_sup)
     y = random.randint(y_inf, y_sup)
+    
     for i in range(len(text)):
+        
         _draw_line(d=d, x=x, y=y, line=text[i], font=font, letter_spacing=LETTER_SPACING, fill=fill, stroke_width=STROKE_WIDTH, stroke_fill=STROKE_FILL)
 
         y += txt_height + LINE_SPACING
@@ -259,6 +256,7 @@ def text_effect(text: str, img: Image):
     return img
 
 def test_multiple(text, effect, modifier=""):
+    
         imgs = os.listdir("test")
         for i in range(len(imgs)):
             image = effect(text, Image.open(os.path.join("test", imgs[i])))
@@ -267,6 +265,7 @@ def test_multiple(text, effect, modifier=""):
         print("Image test successful")
 
 def test(text, effect, modifier=""):
+    
         image = effect(text, Image.open("image.jpg"))
         image.save('output.jpg', optimize=True, quality=80)
 
@@ -277,8 +276,8 @@ def main():
 Prova wow
 '''
     
-    test(input_text, splash_effect)
-    #test_multiple(input_text, splash_effect)
+    #test(input_text, splash_effect)
+    test_multiple(input_text, splash_effect)
     #test_multiple(input_text, splash_effect, "_long")
     
 if __name__ ==  "__main__":

@@ -227,10 +227,13 @@ def tt_check(info):
 
 def ttbt_check(info):
     
-    reply = info['reply']['text']
-    content = info['content']['text']
+    reply = info['reply']['text'].strip()
+    content = info['content']['text'].strip()
     
-    input_text = f"{reply}\n{content}"
+    if len(content.split("\n")) > 1:
+        input_text = content
+    else:
+        input_text = f"{reply}\n{content}"
     
     if input_text.strip() == "":
         return None
