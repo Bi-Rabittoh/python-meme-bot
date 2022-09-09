@@ -99,7 +99,7 @@ def _get_all(update, check_fn, context):
         }
     }
         
-    logging.info(f"User {update.message.from_user.full_name} (@{update.message.from_user.username}) typed: {str(update.message.text)}")
+    logging.info(f"User {update.message.from_user.full_name}{f' (@{update.message.from_user.username})' if update.message.from_user.username is not None else ''} typed: {str(update.message.text)}")
     
     content = check_fn(info_struct)
     
