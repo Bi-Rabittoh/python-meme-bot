@@ -1,4 +1,6 @@
-from PIL import Image, ImageDraw, ImageFont, ImageEnhance
+from PIL import Image, ImageDraw, ImageFont
+from PIL.ImageColor import getrgb
+from PIL.ImageEnhance import Brightness
 from io import BytesIO
 import textwrap, os, random, time, math
 
@@ -38,7 +40,7 @@ def img_to_bio(image):
     return bio
 
 def _darken_image(image: Image, amount=0.5):
-    return ImageEnhance.Brightness(image).enhance(amount)
+    return Brightness(image).enhance(amount)
 
 def _draw_line(d: ImageDraw, x: int, y: int, line: str, font: ImageFont, letter_spacing: int = 9, fill = (255, 255, 255), stroke_width: int = 9, stroke_fill = (0, 0, 0)):
     
@@ -59,6 +61,7 @@ def _draw_tt_bt(text: str, img: Image, bottom=False):
     split_caption = textwrap.wrap(text.upper(), width=20)
     if split_caption == []:
         return
+    
     font_size = FONT_BASE + 10 if len(split_caption) <= 1 else FONT_BASE
     font = ImageFont.truetype(font=IMPACT_FONT_FILE, size=font_size)
     img_width, img_height = img.size
@@ -127,11 +130,14 @@ def tt_bt_effect(text: str, img: Image):
     return img_to_bio(img)
 
 def splash_effect(input_text: str, img: Image):
+    
     LETTER_SPACING = 1
     LINE_SPACING = 3  
     FILL = (255, 255, 255)
     STROKE_WIDTH = 1
     STROKE_FILL = (0, 0, 0)
+    
+    input_text = input_text.strip()
     
     img = img.resize((BASE_WIDTH, int(img.size[1] * float(BASE_WIDTH / img.size[0]))))
     
@@ -141,9 +147,15 @@ def splash_effect(input_text: str, img: Image):
     
     w = img_width / 2
     h = img_height / 2
-    n = len(input_text.strip())
     
-    FONT_BASE, LINE_WIDTH = _get_font_size(h, w, n, LETTER_SPACING, LINE_SPACING)
+    n = len(input_text)
+    
+    try:
+        FONT_BASE, LINE_WIDTH = _get_font_size(h, w, n, LETTER_SPACING, LINE_SPACING)
+    except ValueError as e:
+        print(e)
+        FONT_BASE = 60
+        LINE_WIDTH = 30
     
     lines = [ x for x in input_text.split("\n") if x ]
     first_line = lines.pop(0)
@@ -153,12 +165,14 @@ def splash_effect(input_text: str, img: Image):
     LINE_WIDTH *= 2
 
     text = textwrap.wrap(text.upper(), width=int(LINE_WIDTH))
-        
+    
     if text == []:
+        print("Splash effect needs two lines!")
         return
     text.insert(0, first_line)
+    n_lines = len(text)
 
-    font_first = ImageFont.truetype(font=ARIAL_FONT_FILE, size=int(FONT_BASE - (FONT_BASE / 2)))
+    font_first = ImageFont.truetype(font=ARIAL_FONT_FILE, size=int(FONT_BASE - (FONT_BASE / 2.5)))
     font_base = ImageFont.truetype(font=ARIAL_FONT_FILE, size=int(FONT_BASE))
 
     d = ImageDraw.Draw(img)
@@ -166,11 +180,12 @@ def splash_effect(input_text: str, img: Image):
     _, _, first_txt_width, first_txt_height = d.textbbox((0, 0), text[0], font=font_first)
     _, _, max_txt_width, txt_height = d.textbbox((0, 0), text[1], font=font_base)
 
-    total_height = (txt_height + LINE_SPACING) * (len(text) - 1) + LINE_SPACING + first_txt_height
+    total_height = (txt_height + LINE_SPACING) * (n_lines - 1) + LINE_SPACING + first_txt_height
         
     y = (img_height - total_height) / 2
         
-    for i in range(1, len(text)):
+    for i in range(1, n_lines):
+        
         temp = int(font_base.getlength(text[i]))
         if temp > max_txt_width:
             max_txt_width = temp
@@ -178,7 +193,7 @@ def splash_effect(input_text: str, img: Image):
     max_txt_width = max_txt_width if max_txt_width > first_txt_width else first_txt_width
     x_start = (img_width - max_txt_width) / 2
         
-    for i in range(len(text)):
+    for i in range(n_lines):
         
         font = font_base if i > 0 else font_first
         _draw_line(d=d, x=x_start, y=y, line=text[i], font=font, letter_spacing=LETTER_SPACING, fill=FILL, stroke_width=STROKE_WIDTH, stroke_fill=STROKE_FILL)
@@ -193,6 +208,7 @@ def splash_effect(input_text: str, img: Image):
     return img_to_bio(img)
 
 def wot_effect(input_text: str, img: Image):
+    
     LETTER_SPACING = 1
     LINE_SPACING = 3  
     FILL = (255, 255, 255)
@@ -214,22 +230,25 @@ def wot_effect(input_text: str, img: Image):
     
     try:
         FONT_BASE, LINE_WIDTH = _get_font_size(h, w, n, LETTER_SPACING, LINE_SPACING)
-    except ValueError:
-        return None
+    except ValueError as e:
+        print(e)
+        FONT_BASE = 60
+        LINE_WIDTH = 30
 
     text = textwrap.wrap(input_text.strip(), width=int(LINE_WIDTH))
 
     if text == []:
         return None
     
+    n_lines = len(text)
     font = ImageFont.truetype(font=ARIAL_FONT_FILE, size=int(FONT_BASE))
     d = ImageDraw.Draw(img)
     
-    txt_height = (k2 * FONT_BASE - k3 + LINE_SPACING)
-    max_text_height = txt_height * len(text)
+    txt_height = k2 * FONT_BASE - k3 + LINE_SPACING
+    max_text_height = txt_height * n_lines
     y = (img_height - max_text_height) / 2
         
-    for i in range(len(text)):
+    for i in range(n_lines):
         txt_width = d.textbbox((0, 0), text[i], font=font)[2]
         x = (img_width - txt_width - (len(text[i]) * LETTER_SPACING)) / 2
 
@@ -255,36 +274,43 @@ def text_effect(text: str, img: Image):
     
     img = img.resize((BASE_WIDTH, int(img.size[1] * float(BASE_WIDTH / img.size[0]))))
     
-    text = textwrap.wrap(text, width=LINE_WIDTH)
+    text = textwrap.wrap(text.strip(), width=LINE_WIDTH)
     if text == []:
         return
-
+    n_lines = len(text)
+    
     font = ImageFont.truetype(font=ARIAL_FONT_FILE, size=FONT_BASE)
     
     img_width, img_height = img.size
     d = ImageDraw.Draw(img)
+
+    _, _, _, txt_height = d.textbbox((0, 0), text[0], font=font)
     
-    _, _, max_txt_width, txt_height = d.textbbox((0, 0), text[0], font=font)
+    max_length = len(text[0])
+    choice = 0
+    if n_lines > 1:
+        for i in range(1, n_lines):
+            length = len(text[i])
+            if length > max_length:
+                choice = i
+                max_length = length
+            
+    max_txt_width = int(font.getlength(text[choice]))
     
-    for line in text:
-        
-        temp = int(font.getlength(line))
-        if temp > max_txt_width:
-            max_txt_width = temp
-    
-    
-    total_height = (txt_height + LINE_SPACING) * len(text)
+    total_height = int((txt_height + LINE_SPACING) * n_lines)
     
     y_inf = 0
-    y_sup = img_height - total_height
+    y_sup = max(0, img_height - total_height)
     x_inf = 0
-    x_sup = img_width - max_txt_width - 5
+    x_sup = max(0, img_width - max_txt_width)
     
-    fill = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+    fill = getrgb(f"hsl({random.randint(0, 359)},100%,{random.randint(60, 75)}%)") # hue [0:359], saturation, lightness
+    #print(f"x-> {x_inf}:{x_sup}; y ->{y_inf}:{y_sup}; color: {fill}")
+
     x = random.randint(x_inf, x_sup)
     y = random.randint(y_inf, y_sup)
     
-    for i in range(len(text)):
+    for i in range(n_lines):
         
         _draw_line(d=d, x=x, y=y, line=text[i], font=font, letter_spacing=LETTER_SPACING, fill=fill, stroke_width=STROKE_WIDTH, stroke_fill=STROKE_FILL)
 
@@ -302,9 +328,11 @@ def test_multiple(text, effect, modifier=""):
         imgs = os.listdir("test")
         for i in range(len(imgs)):
             image = effect(text, Image.open(os.path.join("test", imgs[i])))
+            if image is None:
+                return print("Image test failed!")
+            
             Image.open(image).save(os.path.join("test_output", f'output{modifier}{i}.jpg'), optimize=True, quality=80)
-
-        print("Image test successful")
+        return print("Image test successful")
 
 def test(text, effect, modifier=""):
 
@@ -315,13 +343,12 @@ def test(text, effect, modifier=""):
 
 def main():
     input_text = '''
-Il giornalista italiano Mattia Sorbi è stato ferito nella zona occupata di Kherson. Non aveva con sé un interprete, l'autista che lo accompagnava sarebbe morto. 
-
-Godo
+    BiRabittoh (@BiRabittoh)
+Godo godo godo godo godo godo godo godo godo godo godo
 '''
     
     #test(input_text, splash_effect)
-    test_multiple(input_text, tt_bt_effect)
+    test_multiple(input_text, splash_effect)
     #test_multiple(input_text, splash_effect, "_long")
     
 if __name__ ==  "__main__":
