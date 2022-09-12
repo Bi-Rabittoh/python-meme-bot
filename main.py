@@ -384,11 +384,11 @@ def keyboard_handler(update: Update, context: CallbackContext):
     if data.startswith("reroll"):
         amount = int(data.split(" ")[1])
         
-        if amount == 1:
+        if amount <= 1:
             return spin(update, context)
         return autospin(context, update.effective_chat.id, amount)
     
-    match query.data:
+    match data:
         case "none":
             return query.answer(l("none_callback", context))
         case "set_lang_en":
@@ -400,7 +400,7 @@ def keyboard_handler(update: Update, context: CallbackContext):
             _set_lang(update, context, lang)
             return query.answer(l("language_set", context).format(format_lang(lang)))
         case other:
-            logging.error(f"unknown callback: {query.data}")
+            logging.error(f"unknown callback: {data}")
     
     return query.answer()
 
@@ -409,12 +409,10 @@ def main():
     updater = Updater(token=os.getenv("token"),
                       persistence=PicklePersistence(filename='bot-data.pkl',
                                                     store_bot_data=False,
-                                                    store_callback_data=False,
-                                                    #store_user_data=False
+                                                    store_callback_data=False
                                                     ))
     
     dispatcher = updater.dispatcher
-    #dispatcher.workers = 8
     
     dispatcher.add_error_handler(error_callback)
     dispatcher.add_handler(CallbackQueryHandler(callback=keyboard_handler))

@@ -5,7 +5,7 @@ from Constants import get_localized_string as l
 import Constants as c
 import time
 
-autospin_cap = 50
+autospin_cap = 20
 lastreset_default = date(1970, 1, 1)
 cash_default = 5000
 bet_default = 50
@@ -44,7 +44,7 @@ def get_lastreset(context: CallbackContext):
     return get_user_value(context, "lastreset", lastreset_default)
     
 def set_bet(context: CallbackContext, amount: int):
-    return set_user_value(context, "bet", amount)
+    return set_user_value(context, "bet", max(0, amount))
 
 def _spin(context: CallbackContext, id: float, delay=True):
 
@@ -59,14 +59,18 @@ def _spin(context: CallbackContext, id: float, delay=True):
     
     message = context.bot.send_dice(chat_id=id, emoji=slot_emoji, disable_notification=True)
     
-    win = bet * get_multiplier(message.dice.value)
+    multiplier = get_multiplier(message.dice.value)
+    
+    win = bet * multiplier
     
     cash = set_cash(context, cash + win)
     
     if delay:
         markup = InlineKeyboardMarkup([[InlineKeyboardButton(text=l("reroll", context).format(bet / 100), callback_data="reroll 1")]])
-        text = l("you_lost", context) if win == 0 else l("you_won", context).format(win / 100)
-        text += l("cash_result", context).format(cash / 100)
+        
+        text = l("you_lost", context) if multiplier == 0 else l("you_won", context).format(win / 100)
+        if bet != 0:
+            text += l("cash_result", context).format(cash / 100)
 
         args = {
             "chat_id": id,
@@ -93,7 +97,6 @@ def spin(update: Update, context: CallbackContext):
         context.bot.send_message(chat_id=update.effective_chat.id, text=l("no_autospin", context))
     
     if amount == 1:
-        
         _spin(context=context, id=update.effective_chat.id)
     else:
         autospin(context=context, id=update.effective_chat.id, amount=amount)
@@ -103,6 +106,7 @@ def autospin(context: CallbackContext, id: int, amount: int):
     bet = get_bet(context) / 100
     count = 0
     total_win = 0
+    amount = max(2, min(autospin_cap, amount))
     
     for i in range(amount):
         
