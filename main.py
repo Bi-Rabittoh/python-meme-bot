@@ -1,7 +1,7 @@
 from PIL import Image
 from Api import get_random_image, rating_normal, rating_lewd
 from Effects import img_to_bio, tt_bt_effect, bt_effect, splash_effect, wot_effect, text_effect
-from Constants import get_localized_string as l, format_author
+from Constants import get_localized_string as l, format_author, format_lang, langs, get_lang
 from Games import spin, bet, cash
 
 from dotenv import load_dotenv
@@ -13,8 +13,6 @@ from io import BytesIO
 from telegram.error import TelegramError
 from telegram.ext import Updater, CallbackContext, CallbackQueryHandler, CommandHandler, MessageHandler, Filters, PicklePersistence
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
-
-lang = 'us'
 
 def _get_message_content(message):
     
@@ -71,7 +69,7 @@ def _get_image(context, tag="", bio=True):
         logging.warning("Getting Image failed")
         raise TelegramError("bad image")
     
-    markup = InlineKeyboardMarkup([[InlineKeyboardButton(text=l("sauce", lang), url=url)]])
+    markup = InlineKeyboardMarkup([[InlineKeyboardButton(text=l("sauce", context), url=url)]])
     
     if bio:
         return image, markup
@@ -117,7 +115,7 @@ def _get_all(update, check_fn, context):
     return content, image, markup
 
 def start(update: Update, context: CallbackContext):
-    context.bot.send_message(chat_id=update.effective_chat.id, text=l("welcome", lang))
+    context.bot.send_message(chat_id=update.effective_chat.id, text=l("welcome", context))
 
 def set_lewd(update: Update, context: CallbackContext):
     
@@ -127,7 +125,7 @@ def set_lewd(update: Update, context: CallbackContext):
         output = True
         
     context.chat_data['lewd'] = output
-    message = l("lewd_toggle", lang).format(l("enabled", lang) if output else l("disabled", lang))
+    message = l("lewd_toggle", context).format(l("enabled", context) if output else l("disabled", context))
     
     context.bot.send_message(chat_id=update.effective_chat.id, text=message)
 
@@ -157,7 +155,7 @@ def raw(update: Update, context: CallbackContext):
         raise TelegramError("bad image")
     
     image = img_to_bio(image)
-    markup = InlineKeyboardMarkup([[InlineKeyboardButton(text=l("sauce", lang), url=url)]])
+    markup = InlineKeyboardMarkup([[InlineKeyboardButton(text=l("sauce", context), url=url)]])
     
     update.message.reply_photo(photo=image, parse_mode="markdown", reply_markup=markup)
 
@@ -175,7 +173,7 @@ def pilu(update: Update, context: CallbackContext):
         return
     
     image = img_to_bio(image)
-    markup = InlineKeyboardMarkup([[InlineKeyboardButton(text=l("sauce", lang), url=url)]])
+    markup = InlineKeyboardMarkup([[InlineKeyboardButton(text=l("sauce", context), url=url)]])
     
     update.message.reply_photo(photo=image, parse_mode="markdown", reply_markup=markup)
 
@@ -253,13 +251,13 @@ def ttbt(update: Update, context: CallbackContext):
     content, image, markup = _get_all(update, ttbt_check, context)
     
     if image is None:
-        update.message.reply_text(l("no_caption", lang))
+        update.message.reply_text(l("no_caption", context))
         return
     
     image = tt_bt_effect(content, image)
 
     if image is None:
-        update.message.reply_text(l("failed_effect", lang))
+        update.message.reply_text(l("failed_effect", context))
 
     update.message.reply_photo(photo=image, reply_markup=markup)
 
@@ -269,13 +267,13 @@ def tt(update: Update, context: CallbackContext):
     content, image, markup = _get_all(update, tt_check, context)
     
     if image is None:
-        update.message.reply_text(l("no_caption", lang))
+        update.message.reply_text(l("no_caption", context))
         return
     
     image = tt_bt_effect(content, image)
 
     if image is None:
-        update.message.reply_text(l("failed_effect", lang))
+        update.message.reply_text(l("failed_effect", context))
 
     update.message.reply_photo(photo=image, reply_markup=markup)
     
@@ -284,13 +282,13 @@ def bt(update: Update, context: CallbackContext):
     content, image, markup = _get_all(update, tt_check, context)
     
     if image is None:
-        update.message.reply_text(l("no_caption", lang))
+        update.message.reply_text(l("no_caption", context))
         return
 
     image = bt_effect(content, image)
 
     if image is None:
-        update.message.reply_text(l("failed_effect", lang))
+        update.message.reply_text(l("failed_effect", context))
 
     update.message.reply_photo(photo=image, reply_markup=markup)
 
@@ -299,13 +297,13 @@ def splash(update: Update, context: CallbackContext):
     content, image, markup = _get_all(update, splash_check, context)
     
     if image is None:
-        update.message.reply_text(l("no_caption", lang))
+        update.message.reply_text(l("no_caption", context))
         return
     
     image = splash_effect(content, image)
 
     if image is None:
-        update.message.reply_text(l("failed_effect", lang))
+        update.message.reply_text(l("failed_effect", context))
     
     update.message.reply_photo(photo=image, reply_markup=markup)
     
@@ -314,13 +312,13 @@ def wot(update: Update, context: CallbackContext):
     content, image, markup = _get_all(update, wot_check, context)
     
     if image is None:
-        update.message.reply_text(l("no_caption", lang))
+        update.message.reply_text(l("no_caption", context))
         return
     
     image = wot_effect(content, image)
 
     if image is None:
-        update.message.reply_text(l("failed_effect", lang))
+        update.message.reply_text(l("failed_effect", context))
     
     update.message.reply_photo(photo=image, reply_markup=markup)
     
@@ -329,13 +327,13 @@ def text(update: Update, context: CallbackContext):
     content, image, markup = _get_all(update, wot_check, context)
     
     if image is None:
-        update.message.reply_text(l("no_caption", lang))
+        update.message.reply_text(l("no_caption", context))
         return
     
     image = text_effect(content, image)
 
     if image is None:
-        update.message.reply_text(l("failed_effect", lang))
+        update.message.reply_text(l("failed_effect", context))
     
     update.message.reply_photo(photo=image, reply_markup=markup)
 
@@ -343,6 +341,25 @@ def caps(update: Update, context: CallbackContext):
     
     _, reply, _ = _get_reply(update.message.reply_to_message, ' '.join(context.args))
     context.bot.send_message(chat_id=update.effective_chat.id, text=reply.upper())
+
+def lang(update: Update, context: CallbackContext):
+    try:
+        selected = str(context.args[0])
+    except IndexError:
+        selected = None
+    
+    if selected is None:
+        lang = format_lang(get_lang(context))
+        choices = ", ".join(langs) + "."
+        return update.message.reply_text(text=l("current_language", context).format(lang, choices))
+    
+    if selected not in langs:
+        update.message.reply_text(text=l("invalid_language", context))
+        return
+        
+    context.chat_data["lang"] = selected
+
+    update.message.reply_text(text=l("language_set", context).format(format_lang(selected)))
     
 def unknown(update: Update, context: CallbackContext):
     logging.info(f"User {update.message.from_user.full_name} sent {update.message.text_markdown_v2} and I don't know what that means.")
@@ -352,7 +369,7 @@ def error_callback(update: Update, context: CallbackContext):
         raise context.error
     except TelegramError as e:
         logging.error("TelegramError! " + str(e))
-        context.bot.send_message(chat_id=update.effective_chat.id, text=l('error', lang))
+        context.bot.send_message(chat_id=update.effective_chat.id, text=l('error', context))
         
 def _add_effect_handler(dispatcher, command: str, callback):
     dispatcher.add_handler(CommandHandler(command, callback))
@@ -364,13 +381,15 @@ def main():
                       persistence=PicklePersistence(filename='bot-data.pkl',
                                                     store_bot_data=False,
                                                     store_callback_data=False,
-                                                    store_user_data=False))
+                                                    #store_user_data=False
+                                                    ))
     
     dispatcher = updater.dispatcher
     dispatcher.add_error_handler(error_callback)
     
     # commands
     dispatcher.add_handler(CommandHandler('start', start))
+    dispatcher.add_handler(CommandHandler('lang', lang))
     dispatcher.add_handler(CommandHandler('lewd', set_lewd))
     dispatcher.add_handler(CommandHandler('caps', caps))
     dispatcher.add_handler(CommandHandler('pic', pic))
