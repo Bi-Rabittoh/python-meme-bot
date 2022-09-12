@@ -5,7 +5,7 @@ import Constants as c
 import time
 
 lastreset_default = date(1970, 1, 1)
-saldo_default = 10000
+saldo_default = 5000
 bet_default = 50
 slot_emoji = '🎰'
 
@@ -106,14 +106,3 @@ def spin(update: Update, context: CallbackContext):
         result = "Hai giocato {}€ e vinto un totale di {}€".format(count * bet, total_win / 100)
         markup = "" #InlineKeyboardMarkup([[InlineKeyboardButton(text="Altri {} spin (-{}€)".format(amount, bet * amount), callback_data="callback_2")]])
         context.bot.send_message(chat_id=update.effective_chat.id, text=result, reply_markup=markup)
-    
-    
-    
-    
-def spin_5(update: Update, context: CallbackContext):
-    bet = get_bet(context) / 100
-    amount = 5
-    
-    markup = InlineKeyboardMarkup([[InlineKeyboardButton(text="Altri {} spin (-{}€)".format(amount, bet * amount), callback_data="callback_2")]])
-    
-    _autospin(context=context, id=update.effective_chat.id, amount=5, markup=markup)
