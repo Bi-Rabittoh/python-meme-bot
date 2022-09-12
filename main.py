@@ -1,8 +1,8 @@
 from PIL import Image
 from Api import get_random_image, rating_normal, rating_lewd
 from Effects import img_to_bio, tt_bt_effect, bt_effect, splash_effect, wot_effect, text_effect
-from Constants import get_localized_string as l
-from Games import spin
+from Constants import get_localized_string as l, format_author
+from Games import spin, bet, cash
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -179,16 +179,10 @@ def pilu(update: Update, context: CallbackContext):
     
     update.message.reply_photo(photo=image, parse_mode="markdown", reply_markup=markup)
 
-def _format_author(user):
-    
-    if user.username is not None:
-        return user.full_name + f" ({user.username})"
-    return user.full_name
-
 def _get_author(message):
     
     if message.forward_from is not None:
-        return _format_author(message.forward_from)
+        return format_author(message.forward_from)
     
     if message.forward_sender_name is not None:
         return message.forward_sender_name
@@ -196,7 +190,7 @@ def _get_author(message):
     if message.forward_from_chat is not None:
         return message.forward_from_chat.title + ("" if message.forward_from_chat.username is None else f" ({message.forward_from_chat.username})")
     
-    return _format_author(message.from_user)
+    return format_author(message.from_user)
 
 def tt_check(info):
     
@@ -357,7 +351,7 @@ def error_callback(update: Update, context: CallbackContext):
     try:
         raise context.error
     except TelegramError as e:
-        logging.error("TelegramError! " + e)
+        logging.error("TelegramError! " + str(e))
         context.bot.send_message(chat_id=update.effective_chat.id, text=l('error', lang))
         
 def _add_effect_handler(dispatcher, command: str, callback):
@@ -391,6 +385,8 @@ def main():
     
     # games
     dispatcher.add_handler(CommandHandler('spin', spin))
+    dispatcher.add_handler(CommandHandler('bet', bet))
+    dispatcher.add_handler(CommandHandler('cash', cash))
     dispatcher.add_handler(CallbackQueryHandler(callback=spin))
     #dispatcher.add_handler(CallbackQueryHandler(callback=autospin))
     

@@ -25,6 +25,20 @@ localization = {
     },
 }
 
+def format_author(user):
+    
+    if user.username is not None:
+        return user.full_name + f" ({user.username})"
+    return user.full_name
+
+def get_localized_string(text, lang='us'):
+    try:
+        return localization[lang][text]
+    except KeyError:
+        logging.error("No text was found.")
+        return "localization error {}{}{}{}{}{}"
+
+
 symbols = {
     "grape",
     "lemon",
@@ -110,23 +124,3 @@ win_table = {
     (2, "lemon"): 2,
     (2, "grape"): 1
 }
-
-def get_symbols(value: int):
-    try:
-        return slot_machine_value[value]
-    except IndexError:
-        return slot_machine_value[50]
-
-def get_multiplier(count: int, symbol: str):
-    try:
-        return win_table[(count, symbol)]
-    except KeyError as e:
-        return 0
-
-def get_localized_string(text, lang='us'):
-    try:
-        return localization[lang][text]
-    except KeyError:
-        logging.error("No text was found.")
-        return "localization error {}{}{}{}{}{}"
-    
