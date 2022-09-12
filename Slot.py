@@ -25,7 +25,7 @@ def get_user_value(context: CallbackContext, key:str, default):
     try:
         return context.user_data[key]
     except KeyError:
-        print(f"set {key} to {str(default)}")
+        #print(f"set {key} to {str(default)}")
         return set_user_value(context, key, default)
 
 def get_cash(context: CallbackContext):
@@ -84,7 +84,7 @@ def spin(update: Update, context: CallbackContext):
         context.bot.send_message(chat_id=update.effective_chat.id, text=l("no_autospin", context))
     
     if amount == 1:
-        markup = InlineKeyboardMarkup([[InlineKeyboardButton(text=l("reroll", context).format(bet), callback_data="callback_1")]])
+        markup = InlineKeyboardMarkup([[InlineKeyboardButton(text=l("reroll", context).format(bet), callback_data="reroll_single")]])
         _spin(context=context, id=update.effective_chat.id, markup=markup)
     else:
         amount = max(1, min(amount, autospin_cap))
@@ -118,7 +118,7 @@ def bet(update: Update, context: CallbackContext):
 def cash(update: Update, context: CallbackContext):
     cash = get_cash(context) / 100
     
-    if cash == 0:
+    if cash < cash_default / 2:
         lastreset = get_lastreset(context)
         today = date.today()
         

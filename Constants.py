@@ -1,5 +1,6 @@
-import logging
+from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import CallbackContext
+import logging
 
 localization = {
     'en': {
@@ -25,7 +26,7 @@ localization = {
         'cash_reset': "{}, your cash has been reset to {:0.2f}$. You can do this once per day.",
         'cash_reset_fail': "{}, you have 0$ in your account and you cannot reset it today. Come back tomorrow.",
         'no_autospin': "Sorry, multiple spins are disabled in group chats.",
-        'current_language': "Current language: {}.\nChoices: {}\nType \"/lang <code>\" to change it.",
+        'current_language': "Current language: {}.\nChoices: {}\nTo change it, type \"/lang <code>\" or use one of the buttons below.",
         'invalid_language': "Invalid language.",
         'language_set': "Language set: {}",
     },
@@ -52,7 +53,7 @@ localization = {
         'cash_reset': "{}, il tuo saldo è stato ripristinato a {:0.2f}€. Puoi farlo una volta al giorno.",
         'cash_reset_fail': "{}, il tuo saldo è 0€ e non puoi più resettarlo oggi. Riprova domani.",
         'no_autospin': "Gli spin multipli sono disabilitati nelle chat di gruppo.",
-        'current_language': "Lingua attuale: {}.\nAltre lingue: {}\nScrivi \"/lang <codice>\" per cambiarla.",
+        'current_language': "Lingua attuale: {}.\nAltre lingue: {}\nPer cambiarla, scrivi \"/lang <codice>\" o usa uno dei tasti qui sotto.",
         'invalid_language': "Questa lingua non esiste.",
         'language_set': "Lingua impostata: {}",
     },
@@ -61,20 +62,28 @@ langs = localization.keys()
 default_lang = "en"
 
 n_entries = len(localization[default_lang].keys())
-for i in langs:
-    assert(n_entries == len(localization[i].keys()))
-
-def format_author(user):
-    
-    if user.username is not None:
-        return user.full_name + f" ({user.username})"
-    return user.full_name
+        
+#markup = InlineKeyboardMarkup([[button, button][button, button]])
 
 def format_lang(lang: str):
     try:
         return f"{localization[lang]['name']} {localization[lang]['emoji']}"
     except KeyError:
         return 'Unknown'
+
+buttons = []
+for i in langs:
+    assert(n_entries == len(localization[i].keys()))
+    buttons.append(InlineKeyboardButton(text=format_lang(i), callback_data=f"set_lang_{i}"))
+
+N = 2
+lang_markup = InlineKeyboardMarkup([buttons[n:n+N] for n in range(0, len(buttons), N)])
+
+def format_author(user):
+    
+    if user.username is not None:
+        return user.full_name + f" ({user.username})"
+    return user.full_name
 
 def get_lang(context: CallbackContext):
     try:

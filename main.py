@@ -1,8 +1,8 @@
 from PIL import Image
 from Api import get_random_image, rating_normal, rating_lewd
 from Effects import img_to_bio, tt_bt_effect, bt_effect, splash_effect, wot_effect, text_effect
-from Constants import get_localized_string as l, format_author, format_lang, langs, get_lang
-from Games import spin, bet, cash
+from Constants import get_localized_string as l, format_author, format_lang, langs, get_lang, lang_markup
+from Slot import spin, bet, cash
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -342,6 +342,10 @@ def caps(update: Update, context: CallbackContext):
     _, reply, _ = _get_reply(update.message.reply_to_message, ' '.join(context.args))
     context.bot.send_message(chat_id=update.effective_chat.id, text=reply.upper())
 
+def _set_lang(update: Update, context: CallbackContext, lang: str):
+    context.chat_data["lang"] = lang
+    context.bot.send_message(chat_id=update.effective_chat.id, text=l("language_set", context).format(format_lang(lang)))
+
 def lang(update: Update, context: CallbackContext):
     try:
         selected = str(context.args[0])
@@ -351,15 +355,13 @@ def lang(update: Update, context: CallbackContext):
     if selected is None:
         lang = format_lang(get_lang(context))
         choices = ", ".join(langs) + "."
-        return update.message.reply_text(text=l("current_language", context).format(lang, choices))
+        return update.message.reply_text(text=l("current_language", context).format(lang, choices), reply_markup=lang_markup)
     
     if selected not in langs:
         update.message.reply_text(text=l("invalid_language", context))
         return
-        
-    context.chat_data["lang"] = selected
-
-    update.message.reply_text(text=l("language_set", context).format(format_lang(selected)))
+    
+    _set_lang(update, context, selected)
     
 def unknown(update: Update, context: CallbackContext):
     logging.info(f"User {update.message.from_user.full_name} sent {update.message.text_markdown_v2} and I don't know what that means.")
@@ -374,7 +376,26 @@ def error_callback(update: Update, context: CallbackContext):
 def _add_effect_handler(dispatcher, command: str, callback):
     dispatcher.add_handler(CommandHandler(command, callback))
     dispatcher.add_handler(MessageHandler(Filters.caption(update=[f"/{command}"]), callback))
+
+def keyboard_handler(update: Update, context: CallbackContext):
+    query = update.callback_query
     
+    match query.data:
+        case "reroll_single":
+            spin(update, context)
+        case "set_lang_en":
+            lang = "en"
+            _set_lang(update, context, lang)
+            return query.answer(l("language_set", context).format(format_lang(lang)))
+        case "set_lang_it":
+            lang = "it"
+            _set_lang(update, context, lang)
+            return query.answer(l("language_set", context).format(format_lang(lang)))
+        case other:
+            logging.error(f"unknown callback: {query.data}")
+    
+    return query.answer()
+
 def main():
     
     updater = Updater(token=os.getenv("token"),
@@ -386,6 +407,7 @@ def main():
     
     dispatcher = updater.dispatcher
     dispatcher.add_error_handler(error_callback)
+    dispatcher.add_handler(CallbackQueryHandler(callback=keyboard_handler))
     
     # commands
     dispatcher.add_handler(CommandHandler('start', start))
@@ -406,8 +428,6 @@ def main():
     dispatcher.add_handler(CommandHandler('spin', spin))
     dispatcher.add_handler(CommandHandler('bet', bet))
     dispatcher.add_handler(CommandHandler('cash', cash))
-    dispatcher.add_handler(CallbackQueryHandler(callback=spin))
-    #dispatcher.add_handler(CallbackQueryHandler(callback=autospin))
     
     # secrets
     dispatcher.add_handler(CommandHandler('raw', raw))
