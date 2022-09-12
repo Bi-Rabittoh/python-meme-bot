@@ -2,6 +2,7 @@ from PIL import Image
 from Api import get_random_image, rating_normal, rating_lewd
 from Effects import img_to_bio, tt_bt_effect, bt_effect, splash_effect, wot_effect, text_effect
 from Constants import get_localized_string as l
+from Games import spin
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -10,15 +11,10 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 from io import BytesIO
 
 from telegram.error import TelegramError
-from telegram.ext import Updater, CallbackContext, CommandHandler, MessageHandler, Filters, PicklePersistence
+from telegram.ext import Updater, CallbackContext, CallbackQueryHandler, CommandHandler, MessageHandler, Filters, PicklePersistence
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 
 lang = 'us'
-
-def _get_args(context):
-    
-    logging.info(context.args)
-    return ' '.join(context.args)
 
 def _get_message_content(message):
     
@@ -160,7 +156,7 @@ def raw(update: Update, context: CallbackContext):
         logging.warning("Getting Image failed")
         raise TelegramError("bad image")
     
-    image = _img_to_bio(image)
+    image = img_to_bio(image)
     markup = InlineKeyboardMarkup([[InlineKeyboardButton(text=l("sauce", lang), url=url)]])
     
     update.message.reply_photo(photo=image, parse_mode="markdown", reply_markup=markup)
@@ -178,7 +174,7 @@ def pilu(update: Update, context: CallbackContext):
         raise TelegramError("bad image")
         return
     
-    image = _img_to_bio(image)
+    image = img_to_bio(image)
     markup = InlineKeyboardMarkup([[InlineKeyboardButton(text=l("sauce", lang), url=url)]])
     
     update.message.reply_photo(photo=image, parse_mode="markdown", reply_markup=markup)
@@ -351,7 +347,7 @@ def text(update: Update, context: CallbackContext):
 
 def caps(update: Update, context: CallbackContext):
     
-    _, reply, _ = _get_reply(update.message.reply_to_message, _get_args(context))
+    _, reply, _ = _get_reply(update.message.reply_to_message, ' '.join(context.args))
     context.bot.send_message(chat_id=update.effective_chat.id, text=reply.upper())
     
 def unknown(update: Update, context: CallbackContext):
@@ -360,8 +356,8 @@ def unknown(update: Update, context: CallbackContext):
 def error_callback(update: Update, context: CallbackContext):
     try:
         raise context.error
-    except TelegramError:
-        logging.error("TelegramError!!")
+    except TelegramError as e:
+        logging.error("TelegramError! " + e)
         context.bot.send_message(chat_id=update.effective_chat.id, text=l('error', lang))
         
 def _add_effect_handler(dispatcher, command: str, callback):
@@ -379,13 +375,13 @@ def main():
     dispatcher = updater.dispatcher
     dispatcher.add_error_handler(error_callback)
     
+    # commands
     dispatcher.add_handler(CommandHandler('start', start))
     dispatcher.add_handler(CommandHandler('lewd', set_lewd))
     dispatcher.add_handler(CommandHandler('caps', caps))
     dispatcher.add_handler(CommandHandler('pic', pic))
-    dispatcher.add_handler(CommandHandler('raw', raw))
-    dispatcher.add_handler(CommandHandler('pilu', pilu))
     
+    # effects
     _add_effect_handler(dispatcher, 'ttbt', ttbt)
     _add_effect_handler(dispatcher, 'tt', tt)
     _add_effect_handler(dispatcher, 'bt', bt)
@@ -393,6 +389,16 @@ def main():
     _add_effect_handler(dispatcher, 'wot', wot)
     _add_effect_handler(dispatcher, 'text', text)
     
+    # games
+    dispatcher.add_handler(CommandHandler('spin', spin))
+    dispatcher.add_handler(CallbackQueryHandler(callback=spin))
+    #dispatcher.add_handler(CallbackQueryHandler(callback=autospin))
+    
+    # secrets
+    dispatcher.add_handler(CommandHandler('raw', raw))
+    dispatcher.add_handler(CommandHandler('pilu', pilu))
+    
+    # fallback
     dispatcher.add_handler(MessageHandler(Filters.command, unknown))
     updater.start_polling()
     updater.idle()
