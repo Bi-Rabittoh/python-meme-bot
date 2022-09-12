@@ -1,6 +1,7 @@
 from telegram import Update, Dice, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import CallbackContext
 from datetime import date
+from Constants import get_localized_string as l
 import Constants as c
 import time
 
@@ -9,6 +10,7 @@ lastreset_default = date(1970, 1, 1)
 cash_default = 5000
 bet_default = 50
 slot_emoji = '🎰'
+lang = 'us'
 
 def read_arg(context: CallbackContext, default=None, cast=int):
     try:
@@ -61,7 +63,7 @@ def _spin(context: CallbackContext, id: float, markup: InlineKeyboardMarkup = ""
     cash = get_cash(context)
     
     if cash < bet:
-        context.bot.send_message(chat_id=id, text="Saldo insufficiente!")
+        context.bot.send_message(chat_id=id, text=l("not_enough_cash", lang))
         return None
     
     cash = set_cash(context, cash - bet)
@@ -74,9 +76,9 @@ def _spin(context: CallbackContext, id: float, markup: InlineKeyboardMarkup = ""
     
     cash = set_cash(context, cash + win)
         
-    text = "Hai perso..." if win == 0 else "Hai vinto {:0.2f}€!".format(win / 100)
+    text = l("you_lost", lang) if win == 0 else l("you_won", lang).format(win / 100)
     
-    text += " Saldo: {:0.2f}€.".format(cash / 100)
+    text += l("cash_result", lang).format(cash / 100)
     
     time.sleep(2)
     context.bot.send_message(chat_id=id, text=text, reply_markup=markup)
@@ -88,11 +90,15 @@ def spin(update: Update, context: CallbackContext):
     
     amount = read_arg(context, 1)
     
+    if amount > 1 and update.effective_chat.type != 'private':
+        amount = 1
+        context.bot.send_message(chat_id=update.effective_chat.id, text=l("no_autospin", lang))
+    
     if amount == 1:
-        markup = InlineKeyboardMarkup([[InlineKeyboardButton(text="Reroll (-{:0.2f}€)".format(bet), callback_data="callback_1")]])
+        markup = InlineKeyboardMarkup([[InlineKeyboardButton(text=l("reroll", lang).format(bet), callback_data="callback_1")]])
         _spin(context=context, id=update.effective_chat.id, markup=markup)
     else:
-        amount = min(amount, autospin_cap)
+        amount = max(1, min(amount, autospin_cap))
         count = 0
         total_win = 0
         for i in range(amount):
@@ -104,7 +110,7 @@ def spin(update: Update, context: CallbackContext):
             count += 1
             total_win += win
         
-        result = "Hai giocato {}€ e vinto un totale di {}€".format(count * bet, total_win / 100)
+        result = l("summary", lang).format(count * bet, total_win / 100)
         markup = "" #InlineKeyboardMarkup([[InlineKeyboardButton(text="Altri {} spin (-{}€)".format(amount, bet * amount), callback_data="callback_2")]])
         context.bot.send_message(chat_id=update.effective_chat.id, text=result, reply_markup=markup)
 
@@ -117,12 +123,12 @@ def bet(update: Update, context: CallbackContext):
     else:
         bet = get_bet(context)
     
-    result = "{}, il tuo bet attuale è {:0.2f}€.".format(c.format_author(update.effective_user), bet / 100)
+    result = l("current_bet", lang).format(c.format_author(update.effective_user), bet / 100)
     context.bot.send_message(chat_id=update.effective_chat.id, text=result)
     
 def cash(update: Update, context: CallbackContext):
     cash = get_cash(context) / 100
-    result = "{}, il tuo saldo attuale è {:0.2f}€.".format(c.format_author(update.effective_user), cash)
+    result = l("current_cash", lang).format(c.format_author(update.effective_user), cash)
     context.bot.send_message(chat_id=update.effective_chat.id, text=result)
     
 def get_multiplier(value: int):
@@ -130,13 +136,9 @@ def get_multiplier(value: int):
     try:
         values = c.slot_machine_value[value]
     except IndexError:
-        values = c.slot_machine_value[50]
-    
-    values_count = {i:values.count(i) for i in values}
-    symbol = max(values_count, key=values_count.get)
-    count = values_count[symbol]
+        values = c.slot_machine_value[5]
     
     try:
-        return c.win_table[(count, symbol)]
+        return c.win_table[values]
     except KeyError:
         return 0
