@@ -29,6 +29,9 @@ localization = {
         'current_language': "Current language: {}.\nChoices: {}\nTo change it, type \"/lang <code>\" or use one of the buttons below.",
         'invalid_language': "Invalid language.",
         'language_set': "Language set: {}",
+        'none_callback': "This button does nothing.",
+        'fast_output': "Win: {:0.2f}$",
+        'repeat_autospin': "Spin {} times again (-{:0.2f}$)"
     },
     'it': {
         'name': "Italiano",
@@ -56,6 +59,9 @@ localization = {
         'current_language': "Lingua attuale: {}.\nAltre lingue: {}\nPer cambiarla, scrivi \"/lang <codice>\" o usa uno dei tasti qui sotto.",
         'invalid_language': "Questa lingua non esiste.",
         'language_set': "Lingua impostata: {}",
+        'none_callback': "Questo tasto non fa nulla.",
+        'fast_output': "Vinto: {:0.2f}€",
+        'repeat_autospin': "Altri {} spin (-{:0.2f}€)"
     },
 }
 langs = localization.keys()

@@ -2,7 +2,7 @@ from PIL import Image
 from Api import get_random_image, rating_normal, rating_lewd
 from Effects import img_to_bio, tt_bt_effect, bt_effect, splash_effect, wot_effect, text_effect
 from Constants import get_localized_string as l, format_author, format_lang, langs, get_lang, lang_markup
-from Slot import spin, bet, cash
+from Slot import spin, autospin, bet, cash
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -379,10 +379,18 @@ def _add_effect_handler(dispatcher, command: str, callback):
 
 def keyboard_handler(update: Update, context: CallbackContext):
     query = update.callback_query
+    data = query.data
+    
+    if data.startswith("reroll"):
+        amount = int(data.split(" ")[1])
+        
+        if amount == 1:
+            return spin(update, context)
+        return autospin(context, update.effective_chat.id, amount)
     
     match query.data:
-        case "reroll_single":
-            spin(update, context)
+        case "none":
+            return query.answer(l("none_callback", context))
         case "set_lang_en":
             lang = "en"
             _set_lang(update, context, lang)
@@ -406,6 +414,8 @@ def main():
                                                     ))
     
     dispatcher = updater.dispatcher
+    #dispatcher.workers = 8
+    
     dispatcher.add_error_handler(error_callback)
     dispatcher.add_handler(CallbackQueryHandler(callback=keyboard_handler))
     

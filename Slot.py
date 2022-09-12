@@ -46,7 +46,7 @@ def get_lastreset(context: CallbackContext):
 def set_bet(context: CallbackContext, amount: int):
     return set_user_value(context, "bet", amount)
 
-def _spin(context: CallbackContext, id: float, markup: InlineKeyboardMarkup = ""):
+def _spin(context: CallbackContext, id: float, delay=True):
 
     bet = get_bet(context)
     cash = get_cash(context)
@@ -59,20 +59,29 @@ def _spin(context: CallbackContext, id: float, markup: InlineKeyboardMarkup = ""
     
     message = context.bot.send_dice(chat_id=id, emoji=slot_emoji, disable_notification=True)
     
-    multiplier = get_multiplier(message.dice.value)
-    
-    win = bet * multiplier
+    win = bet * get_multiplier(message.dice.value)
     
     cash = set_cash(context, cash + win)
-        
-    text = l("you_lost", context) if win == 0 else l("you_won", context).format(win / 100)
     
-    text += l("cash_result", context).format(cash / 100)
-    
-    time.sleep(2)
-    context.bot.send_message(chat_id=id, text=text, reply_markup=markup, disable_notification=True)
+    if delay:
+        markup = InlineKeyboardMarkup([[InlineKeyboardButton(text=l("reroll", context).format(bet / 100), callback_data="reroll 1")]])
+        text = l("you_lost", context) if win == 0 else l("you_won", context).format(win / 100)
+        text += l("cash_result", context).format(cash / 100)
+
+        args = {
+            "chat_id": id,
+            "text": text,
+            "reply_markup": markup
+        }
+        context.job_queue.run_once(show_result, 2, context=args, name=str(id))
+    else:
+        message.edit_reply_markup(InlineKeyboardMarkup([[InlineKeyboardButton(text=l("fast_output", context).format(win / 100), callback_data="none")]]))
     return win
 
+def show_result(context: CallbackContext):
+    con = context.job.context
+    context.bot.send_message(chat_id=con["chat_id"], text=con["text"], reply_markup=con["reply_markup"], disable_notification=True)
+    
 def spin(update: Update, context: CallbackContext):
     
     bet = get_bet(context) / 100
@@ -84,24 +93,30 @@ def spin(update: Update, context: CallbackContext):
         context.bot.send_message(chat_id=update.effective_chat.id, text=l("no_autospin", context))
     
     if amount == 1:
-        markup = InlineKeyboardMarkup([[InlineKeyboardButton(text=l("reroll", context).format(bet), callback_data="reroll_single")]])
-        _spin(context=context, id=update.effective_chat.id, markup=markup)
-    else:
-        amount = max(1, min(amount, autospin_cap))
-        count = 0
-        total_win = 0
-        for i in range(amount):
-            win = _spin(context=context, id=update.effective_chat.id, markup="")
-            
-            if win is None:
-                break
-            
-            count += 1
-            total_win += win
         
-        result = l("summary", context).format(count * bet, total_win / 100)
-        markup = "" #InlineKeyboardMarkup([[InlineKeyboardButton(text="Altri {} spin (-{}€)".format(amount, bet * amount), callback_data="callback_2")]])
-        context.bot.send_message(chat_id=update.effective_chat.id, text=result, reply_markup=markup, disable_notification=False)
+        _spin(context=context, id=update.effective_chat.id)
+    else:
+        autospin(context=context, id=update.effective_chat.id, amount=amount)
+    
+def autospin(context: CallbackContext, id: int, amount: int):
+    
+    bet = get_bet(context) / 100
+    count = 0
+    total_win = 0
+    
+    for i in range(amount):
+        
+        win = _spin(context=context, id=id, delay=False)
+        
+        if win is None:
+            break
+        
+        count += 1
+        total_win += win
+    
+    result = l("summary", context).format(count * bet, total_win / 100)
+    markup = InlineKeyboardMarkup([[InlineKeyboardButton(text="Altri {} spin (-{}€)".format(amount, bet * amount), callback_data=f"reroll {amount}")]])
+    context.bot.send_message(chat_id=id, text=result, reply_markup=markup, disable_notification=False)
 
 def bet(update: Update, context: CallbackContext):
     
