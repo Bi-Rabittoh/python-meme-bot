@@ -1,5 +1,5 @@
 from PIL import Image
-from Api import get_random_image, rating_normal, rating_lewd
+from Api import get_random_image
 from Effects import img_to_bio, tt_bt_effect, bt_effect, splash_effect, wot_effect, text_effect
 from Constants import get_localized_string as l, format_author, format_lang, langs, get_lang, lang_markup
 from Slot import spin, autospin, bet, cash
@@ -57,22 +57,17 @@ def _get_lewd(context):
     except KeyError:
         return False
 
-def _get_image(context, tag="", bio=True):
+def _get_image(context):
     
     if context is not None:
-        if _get_lewd(context):
-            image, url = get_random_image(rating_lewd, tag)
-        else:
-            image, url = get_random_image(rating_normal, tag)
+        image, url = get_random_image(_get_lewd(context))
     
     if image is None:
         logging.warning("Getting Image failed")
         raise TelegramError("bad image")
     
     markup = InlineKeyboardMarkup([[InlineKeyboardButton(text=l("sauce", context), url=url)]])
-    
-    if bio:
-        return image, markup
+
     return image, markup
 
 def _get_all(update, check_fn, context):
@@ -110,7 +105,7 @@ def _get_all(update, check_fn, context):
         image = image_content
     
     if image is None:
-        image, markup = _get_image(context, bio=False)
+        image, markup = _get_image(context)
     
     return content, image, markup
 
@@ -131,51 +126,8 @@ def set_lewd(update: Update, context: CallbackContext):
 
 def pic(update: Update, context: CallbackContext):
     
-    try:
-        tag = " " + context.args[0]
-    except IndexError:
-        tag = ""
-
-    image, markup = _get_image(context, tag)
+    image, markup = _get_image(context)
     update.message.reply_photo(photo=img_to_bio(image), parse_mode="markdown", reply_markup=markup)
-
-def raw(update: Update, context: CallbackContext):
-    
-    tag = ""
-    try:
-        tag += " " + context.args[0]
-        tag += " " + context.args[1]
-    except IndexError:
-        pass
-    
-    image, url = get_random_image("", tag)
-    
-    if image is None:
-        logging.warning("Getting Image failed")
-        raise TelegramError("bad image")
-    
-    image = img_to_bio(image)
-    markup = InlineKeyboardMarkup([[InlineKeyboardButton(text=l("sauce", context), url=url)]])
-    
-    update.message.reply_photo(photo=image, parse_mode="markdown", reply_markup=markup)
-
-def pilu(update: Update, context: CallbackContext):
-    
-    logging.warning(f"User {update.message.from_user.username} requested an explicit pic.")
-    try:
-        tag = " " + context.args[0]
-    except IndexError:
-        tag = ""
-    image, url = get_random_image("rating:e" + tag)
-    if image is None:
-        logging.warning("Getting Image failed")
-        raise TelegramError("bad image")
-        return
-    
-    image = img_to_bio(image)
-    markup = InlineKeyboardMarkup([[InlineKeyboardButton(text=l("sauce", context), url=url)]])
-    
-    update.message.reply_photo(photo=image, parse_mode="markdown", reply_markup=markup)
 
 def _get_author(message):
     
@@ -436,10 +388,6 @@ def main():
     dispatcher.add_handler(CommandHandler('spin', spin))
     dispatcher.add_handler(CommandHandler('bet', bet))
     dispatcher.add_handler(CommandHandler('cash', cash))
-    
-    # secrets
-    dispatcher.add_handler(CommandHandler('raw', raw))
-    dispatcher.add_handler(CommandHandler('pilu', pilu))
     
     # fallback
     dispatcher.add_handler(MessageHandler(Filters.command, unknown))
