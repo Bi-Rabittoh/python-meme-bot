@@ -11,7 +11,7 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 from io import BytesIO
 
 from telegram.error import TelegramError
-from telegram.ext import Updater, CallbackContext, CallbackQueryHandler, CommandHandler, MessageHandler, Filters, PicklePersistence
+from telegram.ext import ApplicationBuilder, Updater, CallbackContext, CallbackQueryHandler, CommandHandler, MessageHandler, PicklePersistence, filters, PersistenceInput
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 
 def _get_message_content(message):
@@ -112,7 +112,7 @@ def _get_all(update, check_fn, context):
 def start(update: Update, context: CallbackContext):
     context.bot.send_message(chat_id=update.effective_chat.id, text=l("welcome", context))
 
-def set_lewd(update: Update, context: CallbackContext):
+async def set_lewd(update: Update, context: CallbackContext):
     
     try:
         output = False if context.chat_data["lewd"] else True
@@ -122,12 +122,12 @@ def set_lewd(update: Update, context: CallbackContext):
     context.chat_data['lewd'] = output
     message = l("lewd_toggle", context).format(l("enabled", context) if output else l("disabled", context))
     
-    context.bot.send_message(chat_id=update.effective_chat.id, text=message)
+    return await context.bot.send_message(chat_id=update.effective_chat.id, text=message)
 
-def pic(update: Update, context: CallbackContext):
+async def pic(update: Update, context: CallbackContext):
     
     image, markup = _get_image(context)
-    update.message.reply_photo(photo=img_to_bio(image), parse_mode="markdown", reply_markup=markup)
+    return await update.message.reply_photo(photo=img_to_bio(image), parse_mode="markdown", reply_markup=markup)
 
 def _get_author(message):
     
@@ -198,107 +198,102 @@ def wot_check(info):
 
     return input_text
 
-def ttbt(update: Update, context: CallbackContext):
+async def ttbt(update: Update, context: CallbackContext):
     
     content, image, markup = _get_all(update, ttbt_check, context)
     
     if image is None:
-        update.message.reply_text(l("no_caption", context))
-        return
+        return await update.message.reply_text(l("no_caption", context))
     
     image = tt_bt_effect(content, image)
 
     if image is None:
-        update.message.reply_text(l("failed_effect", context))
+        return await update.message.reply_text(l("failed_effect", context))
 
-    update.message.reply_photo(photo=image, reply_markup=markup)
+    return await update.message.reply_photo(photo=image, reply_markup=markup)
 
 
-def tt(update: Update, context: CallbackContext):
+async def tt(update: Update, context: CallbackContext):
     
     content, image, markup = _get_all(update, tt_check, context)
     
     if image is None:
-        update.message.reply_text(l("no_caption", context))
-        return
+        return await update.message.reply_text(l("no_caption", context))
     
     image = tt_bt_effect(content, image)
 
     if image is None:
-        update.message.reply_text(l("failed_effect", context))
+        return await update.message.reply_text(l("failed_effect", context))
 
-    update.message.reply_photo(photo=image, reply_markup=markup)
+    return await update.message.reply_photo(photo=image, reply_markup=markup)
     
-def bt(update: Update, context: CallbackContext):
+async def bt(update: Update, context: CallbackContext):
     
     content, image, markup = _get_all(update, tt_check, context)
     
     if image is None:
-        update.message.reply_text(l("no_caption", context))
-        return
+        return await update.message.reply_text(l("no_caption", context))
 
     image = bt_effect(content, image)
 
     if image is None:
-        update.message.reply_text(l("failed_effect", context))
+        return await update.message.reply_text(l("failed_effect", context))
 
-    update.message.reply_photo(photo=image, reply_markup=markup)
+    return await update.message.reply_photo(photo=image, reply_markup=markup)
 
-def splash(update: Update, context: CallbackContext):
+async def splash(update: Update, context: CallbackContext):
     
     content, image, markup = _get_all(update, splash_check, context)
     
     if image is None:
-        update.message.reply_text(l("no_caption", context))
-        return
+        return await update.message.reply_text(l("no_caption", context))
     
     image = splash_effect(content, image)
 
     if image is None:
-        update.message.reply_text(l("failed_effect", context))
+        return await update.message.reply_text(l("failed_effect", context))
     
-    update.message.reply_photo(photo=image, reply_markup=markup)
+    return await update.message.reply_photo(photo=image, reply_markup=markup)
     
-def wot(update: Update, context: CallbackContext):
+async def wot(update: Update, context: CallbackContext):
     
     content, image, markup = _get_all(update, wot_check, context)
     
     if image is None:
-        update.message.reply_text(l("no_caption", context))
-        return
+        return await update.message.reply_text(l("no_caption", context))
     
     image = wot_effect(content, image)
 
     if image is None:
-        update.message.reply_text(l("failed_effect", context))
+        await update.message.reply_text(l("failed_effect", context))
     
-    update.message.reply_photo(photo=image, reply_markup=markup)
+    await update.message.reply_photo(photo=image, reply_markup=markup)
     
-def text(update: Update, context: CallbackContext):
+async def text(update: Update, context: CallbackContext):
     
     content, image, markup = _get_all(update, wot_check, context)
     
     if image is None:
-        update.message.reply_text(l("no_caption", context))
+        await update.message.reply_text(l("no_caption", context))
         return
     
     image = text_effect(content, image)
 
     if image is None:
-        update.message.reply_text(l("failed_effect", context))
+        await update.message.reply_text(l("failed_effect", context))
     
-    update.message.reply_photo(photo=image, reply_markup=markup)
+    await update.message.reply_photo(photo=image, reply_markup=markup)
 
-def caps(update: Update, context: CallbackContext):
+async def caps(update: Update, context: CallbackContext):
     
     _, reply, _ = _get_reply(update.message.reply_to_message, ' '.join(context.args))
-    context.bot.send_message(chat_id=update.effective_chat.id, text=reply.upper())
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=reply.upper())
 
-def _set_lang(update: Update, context: CallbackContext, lang: str):
+async def _set_lang(update: Update, context: CallbackContext, lang: str):
     context.chat_data["lang"] = lang
-    context.bot.send_message(chat_id=update.effective_chat.id, text=l("language_set", context).format(format_lang(lang)))
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=l("language_set", context).format(format_lang(lang)))
 
-def lang(update: Update, context: CallbackContext):
+async def lang(update: Update, context: CallbackContext):
     try:
         selected = str(context.args[0])
     except IndexError:
@@ -307,29 +302,28 @@ def lang(update: Update, context: CallbackContext):
     if selected is None:
         lang = format_lang(get_lang(context))
         choices = ", ".join(langs) + "."
-        return update.message.reply_text(text=l("current_language", context).format(lang, choices), reply_markup=lang_markup)
+        return await update.message.reply_text(text=l("current_language", context).format(lang, choices), reply_markup=lang_markup)
     
     if selected not in langs:
-        update.message.reply_text(text=l("invalid_language", context))
-        return
+        return await update.message.reply_text(text=l("invalid_language", context))
     
-    _set_lang(update, context, selected)
+    return await _set_lang(update, context, selected)
     
 def unknown(update: Update, context: CallbackContext):
     logging.info(f"User {update.message.from_user.full_name} sent {update.message.text_markdown_v2} and I don't know what that means.")
     
-def error_callback(update: Update, context: CallbackContext):
+async def error_callback(update: Update, context: CallbackContext):
     try:
         raise context.error
     except TelegramError as e:
         logging.error("TelegramError! " + str(e))
-        context.bot.send_message(chat_id=update.effective_chat.id, text=l('error', context))
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=l('error', context))
         
-def _add_effect_handler(dispatcher, command: str, callback):
-    dispatcher.add_handler(CommandHandler(command, callback))
-    dispatcher.add_handler(MessageHandler(Filters.caption(update=[f"/{command}"]), callback))
+def _add_effect_handler(application: ApplicationBuilder, command: str, callback):
+    application.add_handler(CommandHandler(command, callback))
+    application.add_handler(MessageHandler(filters.Caption([f"/{command}"]), callback))
 
-def keyboard_handler(update: Update, context: CallbackContext):
+async def keyboard_handler(update: Update, context: CallbackContext):
     query = update.callback_query
     data = query.data
     
@@ -337,62 +331,62 @@ def keyboard_handler(update: Update, context: CallbackContext):
         amount = int(data.split(" ")[1])
         
         if amount <= 1:
-            return spin(update, context)
-        return autospin(context, update.effective_chat.id, amount)
+            return await spin(update, context)
+        return await autospin(context, update.effective_chat.id, amount)
     
     match data:
         case "none":
             return query.answer(l("none_callback", context))
         case "set_lang_en":
             lang = "en"
-            _set_lang(update, context, lang)
-            return query.answer(l("language_set", context).format(format_lang(lang)))
+            await _set_lang(update, context, lang)
+            return await query.answer(l("language_set", context).format(format_lang(lang)))
         case "set_lang_it":
             lang = "it"
-            _set_lang(update, context, lang)
-            return query.answer(l("language_set", context).format(format_lang(lang)))
+            await _set_lang(update, context, lang)
+            return await query.answer(l("language_set", context).format(format_lang(lang)))
         case other:
             logging.error(f"unknown callback: {data}")
     
-    return query.answer()
+    return await query.answer()
 
 def main():
     
-    updater = Updater(token=os.getenv("token"),
-                      persistence=PicklePersistence(filename='bot-data.pkl',
-                                                    store_bot_data=False,
-                                                    store_callback_data=False
-                                                    ))
+    pers = PersistenceInput(bot_data = False, callback_data = False)
     
-    dispatcher = updater.dispatcher
+    application = ApplicationBuilder()
+    application.token(os.getenv("token"))
+    application.persistence(PicklePersistence(filepath='bot-data.pkl', store_data=pers))
     
-    dispatcher.add_error_handler(error_callback)
-    dispatcher.add_handler(CallbackQueryHandler(callback=keyboard_handler))
+    application = application.build()
+
+    
+    application.add_error_handler(error_callback)
+    application.add_handler(CallbackQueryHandler(callback=keyboard_handler))
     
     # commands
-    dispatcher.add_handler(CommandHandler('start', start))
-    dispatcher.add_handler(CommandHandler('lang', lang))
-    dispatcher.add_handler(CommandHandler('lewd', set_lewd))
-    dispatcher.add_handler(CommandHandler('caps', caps))
-    dispatcher.add_handler(CommandHandler('pic', pic))
+    application.add_handler(CommandHandler('start', start))
+    application.add_handler(CommandHandler('lang', lang))
+    application.add_handler(CommandHandler('lewd', set_lewd))
+    application.add_handler(CommandHandler('caps', caps))
+    application.add_handler(CommandHandler('pic', pic))
     
     # effects
-    _add_effect_handler(dispatcher, 'ttbt', ttbt)
-    _add_effect_handler(dispatcher, 'tt', tt)
-    _add_effect_handler(dispatcher, 'bt', bt)
-    _add_effect_handler(dispatcher, 'splash', splash)
-    _add_effect_handler(dispatcher, 'wot', wot)
-    _add_effect_handler(dispatcher, 'text', text)
+    _add_effect_handler(application, 'ttbt', ttbt)
+    _add_effect_handler(application, 'tt', tt)
+    _add_effect_handler(application, 'bt', bt)
+    _add_effect_handler(application, 'splash', splash)
+    _add_effect_handler(application, 'wot', wot)
+    _add_effect_handler(application, 'text', text)
     
     # games
-    dispatcher.add_handler(CommandHandler('spin', spin))
-    dispatcher.add_handler(CommandHandler('bet', bet))
-    dispatcher.add_handler(CommandHandler('cash', cash))
+    application.add_handler(CommandHandler('spin', spin))
+    application.add_handler(CommandHandler('bet', bet))
+    application.add_handler(CommandHandler('cash', cash))
     
     # fallback
-    dispatcher.add_handler(MessageHandler(Filters.command, unknown))
-    updater.start_polling()
-    updater.idle()
+    application.add_handler(MessageHandler(filters.Command(), unknown))
+    application.run_polling()
 
 if __name__ ==  "__main__":
     main()

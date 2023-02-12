@@ -46,18 +46,18 @@ def get_lastreset(context: CallbackContext):
 def set_bet(context: CallbackContext, amount: int):
     return set_user_value(context, "bet", max(0, amount))
 
-def _spin(context: CallbackContext, id: float, delay=True):
+async def _spin(context: CallbackContext, id: float, delay=True):
 
     bet = get_bet(context)
     cash = get_cash(context)
     
     if cash < bet:
-        context.bot.send_message(chat_id=id, text=l("not_enough_cash", context))
+        await context.bot.send_message(chat_id=id, text=l("not_enough_cash", context))
         return None
     
     cash = set_cash(context, cash - bet)
     
-    message = context.bot.send_dice(chat_id=id, emoji=slot_emoji, disable_notification=True)
+    message = await context.bot.send_dice(chat_id=id, emoji=slot_emoji, disable_notification=True)
     
     multiplier = get_multiplier(message.dice.value)
     
@@ -77,16 +77,16 @@ def _spin(context: CallbackContext, id: float, delay=True):
             "text": text,
             "reply_markup": markup
         }
-        context.job_queue.run_once(show_result, 2, context=args, name=str(id))
+        context.job_queue.run_once(show_result, 2, data=args, name=str(id))
     else:
         message.edit_reply_markup(InlineKeyboardMarkup([[InlineKeyboardButton(text=l("fast_output", context).format(win / 100), callback_data="none")]]))
     return win
 
-def show_result(context: CallbackContext):
-    con = context.job.context
-    context.bot.send_message(chat_id=con["chat_id"], text=con["text"], reply_markup=con["reply_markup"], disable_notification=True)
+async def show_result(context: CallbackContext):
+    con = context.job.data
+    return await context.bot.send_message(chat_id=con["chat_id"], text=con["text"], reply_markup=con["reply_markup"], disable_notification=True)
     
-def spin(update: Update, context: CallbackContext):
+async def spin(update: Update, context: CallbackContext):
     
     bet = get_bet(context) / 100
     
@@ -94,14 +94,14 @@ def spin(update: Update, context: CallbackContext):
     
     if amount > 1 and update.effective_chat.type != 'private':
         amount = 1
-        context.bot.send_message(chat_id=update.effective_chat.id, text=l("no_autospin", context))
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=l("no_autospin", context))
     
     if amount == 1:
-        _spin(context=context, id=update.effective_chat.id)
+        return await _spin(context=context, id=update.effective_chat.id)
     else:
-        autospin(context=context, id=update.effective_chat.id, amount=amount)
+        return await autospin(context=context, id=update.effective_chat.id, amount=amount)
     
-def autospin(context: CallbackContext, id: int, amount: int):
+async def autospin(context: CallbackContext, id: int, amount: int):
     
     bet = get_bet(context) / 100
     count = 0
@@ -110,7 +110,7 @@ def autospin(context: CallbackContext, id: int, amount: int):
     
     for i in range(amount):
         
-        win = _spin(context=context, id=id, delay=False)
+        win = await _spin(context=context, id=id, delay=False)
         
         if win is None:
             break
@@ -120,9 +120,9 @@ def autospin(context: CallbackContext, id: int, amount: int):
     
     result = l("summary", context).format(count * bet, total_win / 100)
     markup = InlineKeyboardMarkup([[InlineKeyboardButton(text="Altri {} spin (-{}€)".format(amount, bet * amount), callback_data=f"reroll {amount}")]])
-    context.bot.send_message(chat_id=id, text=result, reply_markup=markup, disable_notification=False)
+    return await context.bot.send_message(chat_id=id, text=result, reply_markup=markup, disable_notification=False)
 
-def bet(update: Update, context: CallbackContext):
+async def bet(update: Update, context: CallbackContext):
     
     amount = read_arg(context=context, cast=float)
     
@@ -132,12 +132,13 @@ def bet(update: Update, context: CallbackContext):
         bet = get_bet(context)
     
     result = l("current_bet", context).format(c.format_author(update.effective_user), bet / 100)
-    context.bot.send_message(chat_id=update.effective_chat.id, text=result)
+    return await context.bot.send_message(chat_id=update.effective_chat.id, text=result)
     
 def cash(update: Update, context: CallbackContext):
+    
     cash = get_cash(context) / 100
     
-    if cash < cash_default / 2:
+    if cash < cash_default / 200:
         lastreset = get_lastreset(context)
         today = date.today()
         
@@ -148,7 +149,7 @@ def cash(update: Update, context: CallbackContext):
             result = l("cash_reset", context).format(c.format_author(update.effective_user), cash / 100)
             return update.message.reply_text(text=result)
         else:
-            return update.message.reply_text(text=l("cash_reset_fail", context).format(c.format_author(update.effective_user)))
+            return update.message.reply_text(text=l("cash_reset_fail", context).format(c.format_author(update.effective_user), cash))
     
     
     result = l("current_cash", context).format(c.format_author(update.effective_user), cash)

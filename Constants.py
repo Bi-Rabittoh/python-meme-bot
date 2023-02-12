@@ -24,7 +24,7 @@ localization = {
         'current_bet': "{}, your current bet is {:0.2f}$.",
         'current_cash': "{}, you currently have {:0.2f}$ in your account.",
         'cash_reset': "{}, your cash has been reset to {:0.2f}$. You can do this once per day.",
-        'cash_reset_fail': "{}, you have 0$ in your account and you cannot reset it today. Come back tomorrow.",
+        'cash_reset_fail': "{}, you have {:0.2f}$ in your account and you cannot reset it today. Come back tomorrow.",
         'no_autospin': "Sorry, multiple spins are disabled in group chats.",
         'current_language': "Current language: {}.\nChoices: {}\nTo change it, type \"/lang <code>\" or use one of the buttons below.",
         'invalid_language': "Invalid language.",
@@ -54,7 +54,7 @@ localization = {
         'current_bet': "{}, il tuo bet attuale è {:0.2f}€.",
         'current_cash': "{}, il tuo saldo attuale è {:0.2f}€.",
         'cash_reset': "{}, il tuo saldo è stato ripristinato a {:0.2f}€. Puoi farlo una volta al giorno.",
-        'cash_reset_fail': "{}, il tuo saldo è 0€ e non puoi più resettarlo oggi. Riprova domani.",
+        'cash_reset_fail': "{}, il tuo saldo è {:0.2f}€ e non puoi più resettarlo oggi. Riprova domani.",
         'no_autospin': "Gli spin multipli sono disabilitati nelle chat di gruppo.",
         'current_language': "Lingua attuale: {}.\nAltre lingue: {}\nPer cambiarla, scrivi \"/lang <codice>\" o usa uno dei tasti qui sotto.",
         'invalid_language': "Questa lingua non esiste.",
@@ -180,8 +180,8 @@ win_table = {
     (3, "lemon"): 3,
     (3, "grape"): 2,
     
-    (2, "seven"): 4,
-    (2, "bar"): 2,
-    (2, "lemon"): 1,
-    (2, "grape"): 0.5
+    (2, "seven"): 2,
+    (2, "bar"): 1,
+    (2, "lemon"): 0.5,
+    (2, "grape"): 0.3
 }
