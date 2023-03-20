@@ -14,12 +14,14 @@ from telegram.error import TelegramError
 from telegram.ext import ApplicationBuilder, Updater, CallbackContext, CallbackQueryHandler, CommandHandler, MessageHandler, PicklePersistence, filters, PersistenceInput
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 
-def _get_message_content(message):
+async def _get_message_content(message):
     
     image = None
     if len(message.photo) > 0:
-        image = message.photo[-1].get_file()
-        image = Image.open(BytesIO(image.download_as_bytearray()))
+        p = message.photo[-1]
+        i = await p.get_file()
+        d = await i.download_as_bytearray()
+        image = Image.open(BytesIO(d))
     
     content = ""
     if message.text is not None:
@@ -41,12 +43,12 @@ def _get_message_content(message):
     
     return image, content, _get_author(message)
 
-def _get_reply(message, fallback=""):
+async def _get_reply(message, fallback=""):
     
     if message is None:
         return None, fallback, None
     
-    image, content, author = _get_message_content(message)
+    image, content, author = await _get_message_content(message)
     
     return image, content, author
 
@@ -70,10 +72,10 @@ def _get_image(context):
 
     return image, markup
 
-def _get_all(update, check_fn, context):
+async def _get_all(update, check_fn, context):
     
-    image_reply, text_reply, author_reply = _get_reply(update.message.reply_to_message)
-    image_content, text_content, author_content = _get_message_content(update.message)
+    image_reply, text_reply, author_reply = await _get_reply(update.message.reply_to_message)
+    image_content, text_content, author_content = await _get_message_content(update.message)
     
     info_struct = {
         "reply": {
@@ -200,7 +202,7 @@ def wot_check(info):
 
 async def ttbt(update: Update, context: CallbackContext):
     
-    content, image, markup = _get_all(update, ttbt_check, context)
+    content, image, markup = await _get_all(update, ttbt_check, context)
     
     if image is None:
         return await update.message.reply_text(l("no_caption", context))
@@ -215,7 +217,7 @@ async def ttbt(update: Update, context: CallbackContext):
 
 async def tt(update: Update, context: CallbackContext):
     
-    content, image, markup = _get_all(update, tt_check, context)
+    content, image, markup = await _get_all(update, tt_check, context)
     
     if image is None:
         return await update.message.reply_text(l("no_caption", context))
@@ -229,7 +231,7 @@ async def tt(update: Update, context: CallbackContext):
     
 async def bt(update: Update, context: CallbackContext):
     
-    content, image, markup = _get_all(update, tt_check, context)
+    content, image, markup = await _get_all(update, tt_check, context)
     
     if image is None:
         return await update.message.reply_text(l("no_caption", context))
@@ -243,7 +245,7 @@ async def bt(update: Update, context: CallbackContext):
 
 async def splash(update: Update, context: CallbackContext):
     
-    content, image, markup = _get_all(update, splash_check, context)
+    content, image, markup = await _get_all(update, splash_check, context)
     
     if image is None:
         return await update.message.reply_text(l("no_caption", context))
@@ -257,7 +259,7 @@ async def splash(update: Update, context: CallbackContext):
     
 async def wot(update: Update, context: CallbackContext):
     
-    content, image, markup = _get_all(update, wot_check, context)
+    content, image, markup = await _get_all(update, wot_check, context)
     
     if image is None:
         return await update.message.reply_text(l("no_caption", context))
@@ -271,7 +273,7 @@ async def wot(update: Update, context: CallbackContext):
     
 async def text(update: Update, context: CallbackContext):
     
-    content, image, markup = _get_all(update, wot_check, context)
+    content, image, markup = await _get_all(update, wot_check, context)
     
     if image is None:
         await update.message.reply_text(l("no_caption", context))
@@ -286,7 +288,7 @@ async def text(update: Update, context: CallbackContext):
 
 async def caps(update: Update, context: CallbackContext):
     
-    _, reply, _ = _get_reply(update.message.reply_to_message, ' '.join(context.args))
+    _, reply, _ = await _get_reply(update.message.reply_to_message, ' '.join(context.args))
     await context.bot.send_message(chat_id=update.effective_chat.id, text=reply.upper())
 
 async def _set_lang(update: Update, context: CallbackContext, lang: str):
