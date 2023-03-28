@@ -1,16 +1,30 @@
-# python-meme
-Python program that creates a meme from an image and caption text
+# MemeBot
+Telegram Bot that uses the Pillow library to compute light image processing.
 
 ## How to use
 
-Edit `main.py` near the bottom and change these lines to what you need for your image
+Copy the `.env.example` file into `.env` and insert your Telegram Bot Token.
 
+Create a new virtual environment and install required packages:
 ```
-caption = "Now I Have a Caption"
-image = './my_image.jpg'
-outputImage = './my_captioned_image.jpg'
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
 ```
 
-Using the command line run
+Then, start the bot by running:
+```python main.py```
 
-`python main.py`
+## Commands
+
+* **/lang**: change the bot's display language;
+* **/pic**: get a random anime picture;
+* **/ttbt**: generate a meme in the top text, bottom text format;
+* **/tt**: only use top text;
+* **/bt**: only use bottom text;
+* **/splash**: generate an authored quote;
+* **/wot**: generate a wall of text;
+* **/text**: display a short text over an image;
+* **/spin**: spin a slot machine;
+* **/bet**: change your bet;
+* **/cash**: display current balance.
