@@ -368,13 +368,11 @@ async def keyboard_handler(update: Update, context: CallbackContext):
 
 
 def main():
+    token = os.getenv("token")
     pers = PersistenceInput(bot_data=False, callback_data=False)
+    persistence = PicklePersistence(filepath='bot-data.pkl', store_data=pers)
 
-    application = ApplicationBuilder()
-    application.token(os.getenv("token"))
-    application.persistence(PicklePersistence(filepath='bot-data.pkl', store_data=pers))
-
-    application = application.build()
+    application = ApplicationBuilder().token(token).persistence(persistence).build()
 
     application.add_error_handler(error_callback)
     application.add_handler(CallbackQueryHandler(callback=keyboard_handler))
