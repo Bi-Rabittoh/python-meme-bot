@@ -4,15 +4,15 @@ from io import BytesIO
 
 from PIL import Image
 from dotenv import load_dotenv
-from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
+from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, Message
 from telegram.error import TelegramError
-from telegram.ext import ApplicationBuilder, CallbackContext, CallbackQueryHandler, CommandHandler, MessageHandler, \
-    PicklePersistence, filters, PersistenceInput
+from telegram.ext import ApplicationBuilder, CallbackQueryHandler, CommandHandler, MessageHandler, \
+    PicklePersistence, filters, PersistenceInput, ContextTypes
 
-from Api import get_random_image
-from Constants import get_localized_string as l, format_author, format_lang, langs, get_lang, lang_markup
-from Effects import img_to_bio, tt_bt_effect, bt_effect, splash_effect, wot_effect, text_effect
-from Slot import spin, autospin, bet, cash
+from .api import get_random_image
+from .constants import format_chat, get_localized_string as l, format_author, format_lang, langs, get_lang, lang_markup
+from .effects import img_to_bio, tt_bt_effect, bt_effect, splash_effect, wot_effect, text_effect
+from .slot import spin, autospin, bet, cash
 
 load_dotenv()
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
@@ -116,11 +116,11 @@ async def _get_all(update, check_fn, context):
     return content, image, markup
 
 
-def start(update: Update, context: CallbackContext):
-    context.bot.send_message(chat_id=update.effective_chat.id, text=l("welcome", context))
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(l("welcome", context))
 
 
-async def set_lewd(update: Update, context: CallbackContext):
+async def set_lewd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         output = False if context.chat_data["lewd"] else True
     except KeyError:
@@ -128,26 +128,40 @@ async def set_lewd(update: Update, context: CallbackContext):
 
     context.chat_data['lewd'] = output
     message = l("lewd_toggle", context).format(l("enabled", context) if output else l("disabled", context))
+    return await update.message.reply_text(message)
 
-    return await context.bot.send_message(chat_id=update.effective_chat.id, text=message)
 
-
-async def pic(update: Update, context: CallbackContext):
+async def pic(update: Update, context: ContextTypes.DEFAULT_TYPE):
     image, markup = _get_image(context)
     return await update.message.reply_photo(photo=img_to_bio(image), parse_mode="markdown", reply_markup=markup)
 
 
-def _get_author(message):
-    if message.forward_from is not None:
-        return format_author(message.forward_from)
-
-    if message.forward_sender_name is not None:
-        return message.forward_sender_name
-
-    if message.forward_from_chat is not None:
-        return message.forward_from_chat.title + (
-            "" if message.forward_from_chat.username is None else f" ({message.forward_from_chat.username})")
-
+def _get_author(message: Message):
+    origin = message.forward_origin
+    
+    if origin is None: # message was not forwarded
+        return format_author(message.from_user)
+    
+    try:
+        return format_author(origin['sender_user']) # MessageOriginUser
+    except KeyError:
+        pass
+    
+    try:
+        return origin['sender_user_name'] # MessageOriginHiddenUser
+    except KeyError:
+        pass
+    
+    try:
+        format_chat(origin['sender_chat']) # MessageOriginChat
+    except KeyError:
+        pass
+    try:
+        format_chat(origin['chat']) # MessageOriginChannel
+    except KeyError:
+        pass
+    
+    logging.warn("Message was forwarded but I couldn't detect the original author.")
     return format_author(message.from_user)
 
 
@@ -207,7 +221,7 @@ def wot_check(info):
     return input_text
 
 
-async def ttbt(update: Update, context: CallbackContext):
+async def ttbt(update: Update, context: ContextTypes.DEFAULT_TYPE):
     content, image, markup = await _get_all(update, ttbt_check, context)
 
     if image is None:
@@ -221,7 +235,7 @@ async def ttbt(update: Update, context: CallbackContext):
     return await update.message.reply_photo(photo=image, reply_markup=markup)
 
 
-async def tt(update: Update, context: CallbackContext):
+async def tt(update: Update, context: ContextTypes.DEFAULT_TYPE):
     content, image, markup = await _get_all(update, tt_check, context)
 
     if image is None:
@@ -235,7 +249,7 @@ async def tt(update: Update, context: CallbackContext):
     return await update.message.reply_photo(photo=image, reply_markup=markup)
 
 
-async def bt(update: Update, context: CallbackContext):
+async def bt(update: Update, context: ContextTypes.DEFAULT_TYPE):
     content, image, markup = await _get_all(update, tt_check, context)
 
     if image is None:
@@ -249,7 +263,7 @@ async def bt(update: Update, context: CallbackContext):
     return await update.message.reply_photo(photo=image, reply_markup=markup)
 
 
-async def splash(update: Update, context: CallbackContext):
+async def splash(update: Update, context: ContextTypes.DEFAULT_TYPE):
     content, image, markup = await _get_all(update, splash_check, context)
 
     if image is None:
@@ -263,7 +277,7 @@ async def splash(update: Update, context: CallbackContext):
     return await update.message.reply_photo(photo=image, reply_markup=markup)
 
 
-async def wot(update: Update, context: CallbackContext):
+async def wot(update: Update, context: ContextTypes.DEFAULT_TYPE):
     content, image, markup = await _get_all(update, wot_check, context)
 
     if image is None:
@@ -277,7 +291,7 @@ async def wot(update: Update, context: CallbackContext):
     await update.message.reply_photo(photo=image, reply_markup=markup)
 
 
-async def text(update: Update, context: CallbackContext):
+async def text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     content, image, markup = await _get_all(update, wot_check, context)
 
     if image is None:
@@ -292,18 +306,18 @@ async def text(update: Update, context: CallbackContext):
     await update.message.reply_photo(photo=image, reply_markup=markup)
 
 
-async def caps(update: Update, context: CallbackContext):
+async def caps(update: Update, context: ContextTypes.DEFAULT_TYPE):
     _, reply, _ = await _get_reply(update.message.reply_to_message, ' '.join(context.args))
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=reply.upper())
+    await update.message.reply_text(reply.upper())
 
 
-async def _set_lang(update: Update, context: CallbackContext, lang: str):
+async def _set_lang(update: Update, context: ContextTypes.DEFAULT_TYPE, lang: str):
     context.chat_data["lang"] = lang
-    await context.bot.send_message(chat_id=update.effective_chat.id,
-                                   text=l("language_set", context).format(format_lang(lang)))
+    response = l("language_set", context).format(format_lang(lang))
+    await update.message.reply_text(response)
 
 
-async def lang(update: Update, context: CallbackContext):
+async def lang(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         selected = str(context.args[0])
     except IndexError:
@@ -321,17 +335,16 @@ async def lang(update: Update, context: CallbackContext):
     return await _set_lang(update, context, selected)
 
 
-def unknown(update: Update, context: CallbackContext):
-    logging.info(
-        f"User {update.message.from_user.full_name} sent {update.message.text_markdown_v2} and I don't know what that means.")
+def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    logging.info(f"User {update.message.from_user.full_name} sent {update.message.text_markdown_v2} and I don't know what that means.")
 
 
-async def error_callback(update: Update, context: CallbackContext):
+async def error_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         raise context.error
     except TelegramError as e:
         logging.error("TelegramError! " + str(e))
-        await context.bot.send_message(chat_id=update.effective_chat.id, text=l('error', context))
+        await update.message.reply_text(l('error', context))
 
 
 def _add_effect_handler(application: ApplicationBuilder, command: str, callback):
@@ -339,7 +352,7 @@ def _add_effect_handler(application: ApplicationBuilder, command: str, callback)
     application.add_handler(MessageHandler(filters.Caption([f"/{command}"]), callback))
 
 
-async def keyboard_handler(update: Update, context: CallbackContext):
+async def keyboard_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     data = query.data
 
@@ -398,7 +411,7 @@ def main():
     application.add_handler(CommandHandler('cash', cash))
 
     # fallback
-    application.add_handler(MessageHandler(filters.Command(), unknown))
+    application.add_handler(MessageHandler(filters.COMMAND, unknown))
     application.run_polling()
 
 

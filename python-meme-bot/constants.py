@@ -1,4 +1,4 @@
-from telegram import InlineKeyboardMarkup, InlineKeyboardButton
+from telegram import InlineKeyboardMarkup, InlineKeyboardButton, User, Chat
 from telegram.ext import CallbackContext
 import logging
 
@@ -85,11 +85,13 @@ for i in langs:
 N = 2
 lang_markup = InlineKeyboardMarkup([buttons[n:n+N] for n in range(0, len(buttons), N)])
 
-def format_author(user):
-    
+def format_author(user: User):
     if user.username is not None:
         return user.full_name + f" ({user.username})"
     return user.full_name
+
+def format_chat(chat: Chat):
+    return chat.title + ("" if chat.username is None else f" ({chat.username})")
 
 def get_lang(context: CallbackContext):
     try:

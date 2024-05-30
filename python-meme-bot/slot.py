@@ -1,8 +1,7 @@
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import CallbackContext
 from datetime import date
-from Constants import get_localized_string as l
-import Constants as c
+from .constants import format_author, slot_machine_value, win_table, get_localized_string as l
 
 autospin_cap = 20
 lastreset_default = date(1970, 1, 1)
@@ -144,7 +143,7 @@ async def bet(update: Update, context: CallbackContext):
     else:
         bet = get_bet(context)
 
-    result = l("current_bet", context).format(c.format_author(update.effective_user), bet / 100)
+    result = l("current_bet", context).format(format_author(update.effective_user), bet / 100)
     return await context.bot.send_message(chat_id=update.effective_chat.id, text=result)
 
 
@@ -159,23 +158,23 @@ def cash(update: Update, context: CallbackContext):
             set_lastreset(context, today)
             cash = set_cash(context, cash_default)
 
-            result = l("cash_reset", context).format(c.format_author(update.effective_user), cash / 100)
+            result = l("cash_reset", context).format(format_author(update.effective_user), cash / 100)
             return update.message.reply_text(text=result)
         else:
             return update.message.reply_text(
-                text=l("cash_reset_fail", context).format(c.format_author(update.effective_user), cash))
+                text=l("cash_reset_fail", context).format(format_author(update.effective_user), cash))
 
-    result = l("current_cash", context).format(c.format_author(update.effective_user), cash)
+    result = l("current_cash", context).format(format_author(update.effective_user), cash)
     return update.message.reply_text(text=result)
 
 
 def get_multiplier(value: int):
     try:
-        values = c.slot_machine_value[value]
+        values = slot_machine_value[value]
     except IndexError:
-        values = c.slot_machine_value[5]
+        values = slot_machine_value[5]
 
     try:
-        return c.win_table[values]
+        return win_table[values]
     except KeyError:
         return 0

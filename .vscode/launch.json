@@ -6,7 +6,7 @@
     "configurations": [
         {
             "name": "Python: file corrente",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
@@ -14,9 +14,9 @@
         },
         {
             "name": "Python: start bot",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
-            "program": "main.py",
+            "module": "python-meme-bot.bot",
             "console": "integratedTerminal",
             "justMyCode": true
         }
