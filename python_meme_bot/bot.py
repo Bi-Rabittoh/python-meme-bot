@@ -153,11 +153,11 @@ def _get_author(message: Message):
         pass
     
     try:
-        format_chat(origin['sender_chat']) # MessageOriginChat
+        return format_chat(origin['sender_chat']) # MessageOriginChat
     except KeyError:
         pass
     try:
-        format_chat(origin['chat']) # MessageOriginChannel
+        return format_chat(origin['chat']) # MessageOriginChannel
     except KeyError:
         pass
     

@@ -16,7 +16,7 @@
             "name": "Python: start bot",
             "type": "debugpy",
             "request": "launch",
-            "module": "python-meme-bot.bot",
+            "module": "python_meme_bot.bot",
             "console": "integratedTerminal",
             "justMyCode": true
         }
