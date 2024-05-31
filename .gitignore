@@ -1,5 +1,5 @@
 .env
-venv
+venv*
 output_image.jpg
 __pycache__
 .ipynb_checkpoints

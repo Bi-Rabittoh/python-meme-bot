@@ -7,12 +7,11 @@ license = "MIT"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.10"
-anime-api = "^1.0.2"
+python = "^3.12.2"
 pillow = "^10.3.0"
 python-dotenv = "^1.0.1"
 requests = "^2.32.3"
-python-telegram-bot = { version = "20.8", extras = ["job-queue"] }
+python-telegram-bot = { version = "21.2", extras = ["job-queue"] }
 
 
 [build-system]
