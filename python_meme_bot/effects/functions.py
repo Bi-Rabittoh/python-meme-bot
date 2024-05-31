@@ -28,17 +28,6 @@ def _get_font_size(h, w, n, letter_spacing, line_spacing):
     line_width = w / (k1 * font_size - k4 + letter_spacing)
     return font_size, line_width
 
-def img_to_bio(image):
-    
-    bio = BytesIO()
-    
-    if image.mode in ("RGBA", "P"):
-        image = image.convert("RGB")
-
-    image.save(bio, 'JPEG')
-    bio.seek(0)
-    return bio
-
 def _darken_image(image: Image, amount=0.5):
     return Brightness(image).enhance(amount)
 
@@ -48,7 +37,7 @@ def _draw_line(d: ImageDraw, x: int, y: int, line: str, font: ImageFont, letter_
                 d.text((x, y), line[i], fill=fill, stroke_width=stroke_width, font=font, stroke_fill=stroke_fill)
                 x += font.getlength(line[i]) + letter_spacing
 
-def _draw_tt_bt(text: str, img: Image, bottom=False):
+def _draw_ttbt(text: str, img: Image, bottom=False):
         
     LETTER_SPACING = 9
     LINE_SPACING = 10  
@@ -86,6 +75,17 @@ def _draw_tt_bt(text: str, img: Image, bottom=False):
 
         y += (txt_height + LINE_SPACING) * factor
 
+def img_to_bio(image):
+    
+    bio = BytesIO()
+    
+    if image.mode in ("RGBA", "P"):
+        image = image.convert("RGB")
+
+    image.save(bio, 'JPEG')
+    bio.seek(0)
+    return bio
+
 def bt_effect(text: str, img: Image):
 
     lines = [x for x in text.split("\n") if x]
@@ -96,7 +96,7 @@ def bt_effect(text: str, img: Image):
     if bt is None:
         return img
     
-    _draw_tt_bt(bt, img, bottom=True)
+    _draw_ttbt(bt, img, bottom=True)
 
     img = img.resize((int(BASE_WIDTH / 2), int(float(img.size[1]) * (BASE_WIDTH / 2) / img.size[0])))
     
@@ -105,7 +105,7 @@ def bt_effect(text: str, img: Image):
     
     return img_to_bio(img)
 
-def tt_bt_effect(text: str, img: Image):
+def ttbt_effect(text: str, img: Image):
     
     lines = [x for x in text.split("\n") if x]
     
@@ -118,9 +118,9 @@ def tt_bt_effect(text: str, img: Image):
         return img
     
     if (tt is not None):
-        _draw_tt_bt(tt, img)
+        _draw_ttbt(tt, img)
     if (bt is not None):
-        _draw_tt_bt(bt, img, bottom=True)
+        _draw_ttbt(bt, img, bottom=True)
         
     img = img.resize((int(BASE_WIDTH / 2), int(float(img.size[1]) * (BASE_WIDTH / 2) / img.size[0])))
     
