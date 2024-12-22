@@ -1,7 +1,6 @@
 from functools import partial
 import os, logging
 
-
 from dotenv import load_dotenv
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CallbackQueryHandler, CommandHandler, MessageHandler, \
@@ -13,6 +12,8 @@ from .effects.functions import img_to_bio
 from .slot import spin, autospin, bet, cash
 from .effects import effectsDict
 from .localization import get_localized_string as l, format_lang, get_lang, langs, lang_markup
+
+data_dir = 'data'
 
 async def effect_handler(update: Update, context: ContextTypes.DEFAULT_TYPE, effect_name: str):
     try:
@@ -135,7 +136,9 @@ def main():
 
     token = os.getenv("token")
     pers = PersistenceInput(bot_data=False, callback_data=False)
-    persistence = PicklePersistence(filepath='bot-data.pkl', store_data=pers)
+    if not os.path.exists(data_dir):
+        os.makedirs(data_dir)
+    persistence = PicklePersistence(filepath=os.path.join(data_dir, 'bot-data.pkl'), store_data=pers)
 
     application = ApplicationBuilder().token(token).persistence(persistence).build()
 

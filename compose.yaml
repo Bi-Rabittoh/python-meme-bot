@@ -1,0 +1,10 @@
+services:
+  python-meme-bot:
+    container_name: python-meme-bot
+    image: ghcr.io/birabittoh/python-meme-bot:master
+    build:
+      context: .
+    env_file: .env
+    restart: unless-stopped
+    volumes:
+      - ./data:/app/data
